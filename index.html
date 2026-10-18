@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Orbe Tracking</title>
+<meta name="theme-color" content="#f6f4fb">
+<script>try{if(localStorage.getItem("orbe-tema")==="escuro")document.documentElement.dataset.tema="escuro"}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Tema claro (padrão) */
+  --bg:#f6f4fb; --bg2:#ffffff; --card:#ffffff; --card2:#f1ecfb; --line:#e3daf2; --line-suave:#efe9f8;
+  --roxo:#6a1fe0; --roxo2:#7b2ff7; --lima:#c6ff3d; --texto:#1a1028; --mut:#6b5d85;
+  --verm:#d4234b; --amar:#9a6200; --ok:#3a7a00; --msg:#3b2f52; --inverso:#ffffff;
+  --header:rgba(246,244,251,.88); --login-box:rgba(255,255,255,.85); --sombra:0 1px 3px rgba(40,20,80,.06);
+  --brilho1:#e4d6ff; --brilho2:#efe6ff;
+  --t-anuncio-bg:rgba(106,31,224,.1); --t-anuncio:#5a17c4; --t-org-bg:rgba(107,93,133,.12);
+  --t-man-bg:rgba(255,201,77,.25); --t-wa-bg:rgba(37,211,102,.14); --t-wa:#11803f; --t-ig-bg:rgba(225,48,108,.12); --t-ig:#c2185b;
+  --radius:18px;
+}
+:root[data-tema="escuro"]{
+  --bg:#0d0716; --bg2:#150c24; --card:#1b1030; --card2:#231540; --line:#2e1d4f; --line-suave:rgba(46,29,79,.6);
+  --roxo:#7b2ff7; --roxo2:#9d5cff; --texto:#f3eefc; --mut:#a594c4;
+  --verm:#ff5c7a; --amar:#ffc94d; --ok:#c6ff3d; --msg:#d9cff0; --inverso:#120a1f;
+  --header:rgba(13,7,22,.82); --login-box:rgba(27,16,48,.75); --sombra:none;
+  --brilho1:#3a1680; --brilho2:#2b0f63;
+  --t-anuncio-bg:rgba(123,47,247,.22); --t-anuncio:#c9a8ff; --t-org-bg:rgba(165,148,196,.15);
+  --t-man-bg:rgba(255,201,77,.15); --t-wa-bg:rgba(37,211,102,.14); --t-wa:#5ee69a; --t-ig-bg:rgba(225,48,108,.15); --t-ig:#ff7aa8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--texto);font-family:"Open Sans",system-ui,sans-serif;font-size:15px;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+.hide{display:none!important}
+h1,h2,.marca{font-family:"Unbounded",sans-serif;letter-spacing:-.01em}
+
+/* Login */
+.login{min-height:100vh;display:grid;place-items:center;padding:24px;
+  background:radial-gradient(900px 500px at 80% -10%,var(--brilho1) 0%,transparent 60%),radial-gradient(700px 400px at -10% 110%,var(--brilho2) 0%,transparent 60%),var(--bg)}
+.login-box{width:100%;max-width:400px;background:var(--login-box);backdrop-filter:blur(14px);box-shadow:var(--sombra);border:1px solid var(--line);border-radius:26px;padding:34px 28px}
+.marca{display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px}
+.estrela{width:26px;height:26px;flex:none}
+.login h1{font-size:26px;margin:26px 0 8px;line-height:1.2}
+.login p{color:var(--mut);margin-bottom:22px;line-height:1.5}
+.campo{width:100%;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--bg2);outline:none;transition:border .15s}
+.campo:focus{border-color:var(--roxo2)}
+.btn{border:0;border-radius:14px;padding:13px 18px;font-weight:700;cursor:pointer;transition:transform .08s,opacity .15s,background .15s}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn-lima{background:var(--lima);color:#120a1f}
+.btn-roxo{background:var(--roxo);color:#fff}
+.btn-fantasma{background:transparent;border:1px solid var(--line);color:var(--texto)}
+.btn-full{width:100%;margin-top:12px}
+.aviso{margin-top:14px;font-size:14px;color:var(--ok);line-height:1.5}
+.aviso.erro{color:var(--verm)}
+
+/* App */
+header{position:sticky;top:0;z-index:20;background:var(--header);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.topo{max-width:1180px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.topo .marca{font-size:17px;margin-right:auto}
+.sel{padding:9px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);outline:none;max-width:100%}
+.abas{max-width:1180px;margin:0 auto;padding:0 20px;display:flex;gap:4px}
+.aba{background:none;border:0;padding:12px 14px;color:var(--mut);font-weight:600;cursor:pointer;border-bottom:2px solid transparent}
+.aba.ativa{color:var(--texto);border-color:var(--roxo2)}
+:root[data-tema="escuro"] .aba.ativa{border-color:var(--lima)}
+main{max-width:1180px;margin:0 auto;padding:22px 20px 80px}
+.linha-filtros{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+.linha-filtros .esp{flex:1}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--bg2);border-radius:999px;padding:7px 13px;font-size:13px;font-weight:600;color:var(--mut);cursor:pointer}
+.chip.ativo{background:var(--texto);color:var(--inverso);border-color:var(--texto)}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+.kpi{background:var(--card);box-shadow:var(--sombra);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
+.kpi .rot{font-size:12px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.kpi .val{font-family:"Unbounded",sans-serif;font-size:22px;margin-top:8px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .sub{font-size:12px;color:var(--mut);margin-top:4px}
+.kpi.destaque{background:linear-gradient(135deg,#5a1fd1,#7b2ff7);border-color:transparent;color:#fff}
+.kpi.destaque .rot,.kpi.destaque .sub{color:#e6d9ff}
+.kpi.lima{background:var(--lima);color:#120a1f;border-color:transparent}
+.kpi.lima .rot,.kpi.lima .sub{color:#3d4d12}
+
+/* Leads */
+.lista{display:grid;gap:10px}
+.lead{background:var(--card);box-shadow:var(--sombra);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+.lead-nome{font-weight:700;font-size:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lead-meta{font-size:13px;color:var(--mut);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.lead-msg{font-size:14px;margin-top:8px;color:var(--msg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:620px}
+.tag{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em}
+.tag-anuncio{background:var(--t-anuncio-bg);color:var(--t-anuncio)}
+.tag-organico{background:var(--t-org-bg);color:var(--mut)}
+.tag-manual{background:var(--t-man-bg);color:var(--amar)}
+.tag-wa{background:var(--t-wa-bg);color:var(--t-wa)}
+.tag-ig{background:var(--t-ig-bg);color:var(--t-ig)}
+.acoes{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.acoes .sel{padding:8px 10px;font-size:14px}
+.vendido-box{text-align:right}
+.vendido-valor{font-family:"Unbounded",sans-serif;color:var(--ok);font-size:18px}
+.link{color:var(--mut);font-size:12px;background:none;border:0;cursor:pointer;text-decoration:underline}
+.wa{color:var(--ok);text-decoration:none;font-weight:600}
+.vazio{text-align:center;color:var(--mut);padding:60px 20px;border:1px dashed var(--line);border-radius:var(--radius);line-height:1.6}
+
+/* Relatório */
+.tabela-wrap{background:var(--card);box-shadow:var(--sombra);border:1px solid var(--line);border-radius:var(--radius);overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:820px}
+th,td{padding:13px 14px;text-align:right;white-space:nowrap;font-size:14px}
+th{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;font-weight:700;border-bottom:1px solid var(--line);background:var(--bg2);position:sticky;top:0}
+td{border-bottom:1px solid var(--line-suave)}
+th:first-child,td:first-child{text-align:left;white-space:normal;min-width:220px}
+tr:last-child td{border-bottom:0}
+tfoot td{font-weight:700;background:var(--bg2)}
+.bom{color:var(--ok)} .ruim{color:var(--verm)}
+.sub-linha{font-size:12px;color:var(--mut);margin-top:3px;font-weight:400}
+.secao-tit{font-size:16px;margin:4px 0 12px}
+.nota{font-size:12px;color:var(--mut);margin-top:12px;line-height:1.6}
+.barra-sync{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--mut)}
+
+/* Modal */
+.fundo{position:fixed;inset:0;background:rgba(5,2,10,.7);backdrop-filter:blur(4px);display:grid;place-items:center;z-index:50;padding:20px}
+.modal{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:26px;width:100%;max-width:380px}
+.modal h2{font-size:18px;margin-bottom:6px}
+.modal p{color:var(--mut);font-size:14px;margin-bottom:16px}
+.modal .linha{display:flex;gap:10px;margin-top:14px}
+.modal .linha .btn{flex:1}
+.prefixo{position:relative}
+.prefixo span{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--mut);font-weight:600}
+.prefixo .campo{padding-left:46px;font-size:20px;font-weight:700}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--texto);color:var(--inverso);padding:12px 18px;border-radius:14px;font-weight:600;z-index:60;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:calc(100% - 32px)}
+
+@media (max-width:860px){.kpis{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:600px){
+  .topo{padding:12px 16px} .abas,main{padding-left:16px;padding-right:16px}
+  .lead{grid-template-columns:1fr}
+  .acoes{justify-content:flex-start}
+  .vendido-box{text-align:left}
+  .kpi .val{font-size:19px}
+  .lead-msg{white-space:normal}
+  #busca{flex:1;min-width:0!important}
+  .linha-filtros .esp{display:none}
+}
+tfoot tr[style] td{font-weight:400;background:transparent}
+.btn-tema{padding:9px 11px;line-height:1}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="estrela" viewBox="0 0 24 24"><path fill="#9d5cff" d="M12 0c.9 6.6 5.4 11.1 12 12-6.6.9-11.1 5.4-12 12-.9-6.6-5.4-11.1-12-12C6.6 11.1 11.1 6.6 12 0z"/></symbol>
+</defs></svg>
+
+<!-- LOGIN -->
+<section id="tela-login" class="login hide">
+  <div class="login-box">
+    <div class="marca"><svg class="estrela"><use href="#estrela"/></svg>Orbe Tracking</div>
+    <h1>Seus leads e vendas, num lugar só.</h1>
+    <p>Digite seu e-mail e enviaremos um link de acesso. Sem senha.</p>
+    <form id="form-login">
+      <input id="email" class="campo" type="email" required placeholder="seu@email.com" autocomplete="email">
+      <button class="btn btn-lima btn-full" type="submit">Receber link de acesso</button>
+    </form>
+    <div id="login-aviso" class="aviso hide"></div>
+  </div>
+</section>
+
+<!-- APP -->
+<section id="tela-app" class="hide">
+  <header>
+    <div class="topo">
+      <div class="marca"><svg class="estrela"><use href="#estrela"/></svg>Orbe Tracking</div>
+      <select id="sel-cliente" class="sel" aria-label="Cliente"></select>
+      <select id="sel-periodo" class="sel" aria-label="Período">
+        <option value="hoje">Hoje</option>
+        <option value="ontem">Ontem</option>
+        <option value="7" selected>Últimos 7 dias</option>
+        <option value="30">Últimos 30 dias</option>
+        <option value="mes">Este mês</option>
+        <option value="mes_ant">Mês passado</option>
+      </select>
+      <button id="btn-tema" class="btn btn-fantasma btn-tema" aria-label="Alternar tema claro/escuro" title="Alternar tema">☾</button>
+      <button id="btn-sair" class="btn btn-fantasma" style="padding:9px 12px">Sair</button>
+    </div>
+    <nav class="abas">
+      <button class="aba ativa" data-aba="leads">Leads</button>
+      <button class="aba" data-aba="relatorio">Relatório</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- LEADS -->
+    <div id="aba-leads">
+      <div class="kpis" id="kpis-leads"></div>
+      <div class="linha-filtros">
+        <div class="chips" id="filtro-status">
+          <button class="chip ativo" data-s="todos">Todos</button>
+          <button class="chip" data-s="novo">Novos</button>
+          <button class="chip" data-s="negociando">Negociando</button>
+          <button class="chip" data-s="vendido">Vendidos</button>
+          <button class="chip" data-s="perdido">Perdidos</button>
+        </div>
+        <div class="esp"></div>
+        <input id="busca" class="sel" placeholder="Buscar nome, telefone ou @" style="min-width:200px">
+        <button id="btn-novo-lead" class="btn btn-fantasma" style="padding:9px 14px">+ Lead manual</button>
+      </div>
+      <div class="lista" id="lista-leads"></div>
+    </div>
+
+    <!-- RELATÓRIO -->
+    <div id="aba-relatorio" class="hide">
+      <div class="linha-filtros">
+        <h2 class="secao-tit" style="margin:0">Resultado das campanhas</h2>
+        <div class="esp"></div>
+        <div class="barra-sync">
+          <span id="sync-info"></span>
+          <button id="btn-sync" class="btn btn-fantasma hide" style="padding:8px 12px">Atualizar métricas</button>
+        </div>
+      </div>
+      <div class="kpis" id="kpis-rel"></div>
+      <div class="chips" id="visao-rel" style="margin-bottom:12px">
+        <button class="chip ativo" data-v="anuncio">Por anúncio</button>
+        <button class="chip" data-v="campanha">Por campanha</button>
+      </div>
+      <div class="tabela-wrap"><table id="tabela-rel"></table></div>
+      <p class="nota">Valor gasto, impressões e mensagens vêm do Meta Ads. Vendas e faturamento são as vendas marcadas aqui no Orbe Tracking, atribuídas ao anúncio que trouxe o lead. Anúncios com o mesmo nome em conjuntos diferentes aparecem somados. Leads orgânicos aparecem na linha "Orgânico / sem anúncio".</p>
+    </div>
+  </main>
+</section>
+
+<!-- MODAL VENDA -->
+<div id="modal-venda" class="fundo hide">
+  <form class="modal" id="form-venda">
+    <h2>Registrar venda</h2>
+    <p id="venda-quem"></p>
+    <div class="prefixo"><span>R$</span><input id="venda-valor" class="campo" inputmode="decimal" placeholder="0,00" required></div>
+    <div class="linha">
+      <button type="button" class="btn btn-fantasma" data-fechar>Cancelar</button>
+      <button type="submit" class="btn btn-lima">Confirmar venda</button>
+    </div>
+  </form>
+</div>
+
+<!-- MODAL LEAD MANUAL -->
+<div id="modal-lead" class="fundo hide">
+  <form class="modal" id="form-lead">
+    <h2>Novo lead manual</h2>
+    <p>Para contatos que chegaram por outro canal (telefone, loja, indicação).</p>
+    <input id="lead-nome" class="campo" placeholder="Nome" style="margin-bottom:10px">
+    <input id="lead-tel" class="campo" placeholder="Telefone com DDD ou @ do Instagram" required>
+    <div class="linha">
+      <button type="button" class="btn btn-fantasma" data-fechar>Cancelar</button>
+      <button type="submit" class="btn btn-roxo">Adicionar</button>
+    </div>
+  </form>
+</div>
+
+<div id="toast" class="toast hide"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://kpdurajnbnpdnjofwefn.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwZHVyYWpuYm5wZG5qb2Z3ZWZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDI4ODMsImV4cCI6MjEwNzIxODg4M30.GtbauzZ396VBxTrbHTVsc3nprx4mMFjRySI_KxoGTZI";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = (s) => document.querySelector(s);
+const brl = (v) => Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const num = (v) => Number(v || 0).toLocaleString("pt-BR");
+const div = (a, b) => (Number(b) > 0 ? Number(a) / Number(b) : null);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+const estado = { clientes: [], cliente: null, papel: "cliente", leads: [], filtro: "todos", busca: "", aba: "leads", leadVenda: null, canal: null };
+
+function toast(msg, ms = 3200) {
+  const t = $("#toast"); t.textContent = msg; t.classList.remove("hide");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.add("hide"), ms);
+}
+
+// Datas no fuso de São Paulo
+function hojeSP() {
+  const p = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
+  return new Date(p + "T00:00:00");
+}
+const iso = (d) => d.toISOString().slice(0, 10);
+function periodo() {
+  const v = $("#sel-periodo").value, h = hojeSP();
+  let ini = new Date(h), fim = new Date(h);
+  if (v === "ontem") { ini.setDate(h.getDate() - 1); fim = new Date(ini); }
+  else if (v === "7") ini.setDate(h.getDate() - 6);
+  else if (v === "30") ini.setDate(h.getDate() - 29);
+  else if (v === "mes") ini = new Date(h.getFullYear(), h.getMonth(), 1);
+  else if (v === "mes_ant") { ini = new Date(h.getFullYear(), h.getMonth() - 1, 1); fim = new Date(h.getFullYear(), h.getMonth(), 0); }
+  return { ini: iso(ini), fim: iso(fim) };
+}
+
+function tempoRel(ts) {
+  const d = new Date(ts), s = (Date.now() - d) / 1000;
+  if (s < 60) return "agora";
+  if (s < 3600) return `há ${Math.floor(s / 60)} min`;
+  if (s < 86400) return `há ${Math.floor(s / 3600)} h`;
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", timeZone: "America/Sao_Paulo" });
+}
+function fone(w) {
+  const d = String(w || "").replace(/\D/g, "");
+  const m = d.match(/^55(\d{2})(\d{4,5})(\d{4})$/);
+  return m ? `(${m[1]}) ${m[2]}-${m[3]}` : d;
+}
+
+// ---------- Auth ----------
+async function iniciar() {
+  // Link de acesso enviado pela agência (?acesso=...): só vale quando a página roda de verdade,
+  // então a prévia de link do WhatsApp não consome o acesso.
+  const q = new URLSearchParams(location.search);
+  let erroAcesso = null;
+  if (q.get("acesso")) {
+    // Não desloga antes: se o link já foi usado, quem já estava logado continua logado
+    const { error } = await sb.auth.verifyOtp({ token_hash: q.get("acesso"), type: q.get("tipo") || "magiclink" });
+    history.replaceState(null, "", location.pathname);
+    if (error) erroAcesso = "Esse link de acesso já foi usado ou venceu. Peça um novo para a Orbe Media ou receba um link pelo e-mail.";
+  }
+  const { data: { session } } = await sb.auth.getSession();
+  if (erroAcesso && !session) {
+    mostrarLogin();
+    const av = $("#login-aviso"); av.className = "aviso erro"; av.textContent = erroAcesso;
+  }
+  if (session) await abrirApp(); else mostrarLogin();
+  sb.auth.onAuthStateChange((ev, s) => {
+    if (ev === "SIGNED_IN" && $("#tela-app").classList.contains("hide")) abrirApp();
+    if (ev === "SIGNED_OUT") mostrarLogin();
+  });
+}
+function mostrarLogin() { $("#tela-app").classList.add("hide"); $("#tela-login").classList.remove("hide"); }
+
+$("#form-login").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector("button"), av = $("#login-aviso");
+  btn.disabled = true; av.className = "aviso"; av.classList.remove("hide");
+  const { error } = await sb.auth.signInWithOtp({
+    email: $("#email").value.trim(),
+    options: { emailRedirectTo: location.origin + location.pathname },
+  });
+  btn.disabled = false;
+  if (error) { av.classList.add("erro"); av.textContent = "Não foi possível enviar: " + error.message; }
+  else av.textContent = "Pronto! Abra o link que enviamos para o seu e-mail neste aparelho.";
+});
+// Sai só neste aparelho (não derruba o acesso nos outros)
+$("#btn-sair").addEventListener("click", () => sb.auth.signOut({ scope: "local" }));
+// Tema claro/escuro (claro é o padrão; a escolha fica salva neste aparelho)
+function aplicarTema(t) {
+  if (t === "escuro") document.documentElement.dataset.tema = "escuro";
+  else delete document.documentElement.dataset.tema;
+  $("#btn-tema").textContent = t === "escuro" ? "☀" : "☾";
+  document.querySelector('meta[name="theme-color"]').content = t === "escuro" ? "#120a1f" : "#f6f4fb";
+}
+aplicarTema(document.documentElement.dataset.tema === "escuro" ? "escuro" : "claro");
+$("#btn-tema").addEventListener("click", () => {
+  const t = document.documentElement.dataset.tema === "escuro" ? "claro" : "escuro";
+  aplicarTema(t);
+  try { localStorage.setItem("orbe-tema", t); } catch (e) {}
+});
+
+async function abrirApp() {
+  $("#tela-login").classList.add("hide"); $("#tela-app").classList.remove("hide");
+  const [{ data: clientes }, { data: papel }] = await Promise.all([
+    sb.from("clientes").select("id, nome, ad_account_id, metricas_sincronizadas_em, metricas_erro").order("nome"),
+    sb.rpc("meu_papel"),
+  ]);
+  estado.clientes = clientes || []; estado.papel = papel || "cliente";
+  const sel = $("#sel-cliente");
+  sel.innerHTML = estado.clientes.map((c) => `<option value="${c.id}">${esc(c.nome)}</option>`).join("");
+  sel.classList.toggle("hide", estado.clientes.length < 2);
+  $("#btn-sync").classList.toggle("hide", estado.papel !== "agencia");
+  if (!estado.clientes.length) {
+    $("#lista-leads").innerHTML = `<div class="vazio">Seu acesso ainda não foi liberado.<br>Fale com a Orbe Media para vincular sua conta.</div>`;
+    $("#kpis-leads").innerHTML = ""; return;
+  }
+  const salvo = (() => { try { return localStorage.getItem("orbe_cliente"); } catch { return null; } })();
+  estado.cliente = estado.clientes.find((c) => c.id === salvo)?.id || estado.clientes[0].id;
+  sel.value = estado.cliente;
+  ouvirTempoReal();
+  recarregar();
+}
+
+$("#sel-cliente").addEventListener("change", (e) => {
+  estado.cliente = e.target.value;
+  try { localStorage.setItem("orbe_cliente", estado.cliente); } catch {}
+  ouvirTempoReal(); recarregar();
+});
+$("#sel-periodo").addEventListener("change", recarregar);
+
+document.querySelectorAll(".aba").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll(".aba").forEach((x) => x.classList.toggle("ativa", x === b));
+  estado.aba = b.dataset.aba;
+  $("#aba-leads").classList.toggle("hide", estado.aba !== "leads");
+  $("#aba-relatorio").classList.toggle("hide", estado.aba !== "relatorio");
+  recarregar();
+}));
+
+function recarregar() { estado.aba === "leads" ? carregarLeads() : carregarRelatorio(); }
+
+function ouvirTempoReal() {
+  if (estado.canal) sb.removeChannel(estado.canal);
+  estado.canal = sb.channel("leads-" + estado.cliente)
+    .on("postgres_changes", { event: "*", schema: "public", table: "leads", filter: `cliente_id=eq.${estado.cliente}` },
+      (p) => {
+        if (p.eventType === "INSERT") toast(`Novo lead: ${p.new.nome || (p.new.ig_username ? "@" + p.new.ig_username : fone(p.new.wa_id))}`);
+        if (estado.aba === "leads") carregarLeads(true);
+      })
+    .subscribe();
+}
+
+// ---------- Leads ----------
+async function carregarLeads(silencioso) {
+  const { ini, fim } = periodo();
+  if (!silencioso) $("#lista-leads").innerHTML = `<div class="vazio">Carregando…</div>`;
+  const { data, error } = await sb.from("leads")
+    .select("id, canal, wa_id, ig_username, nome, origem, anuncio_titulo, status, valor_venda, compras, capi_enviado_em, capi_erro, criado_em, ultima_mensagem_em")
+    .eq("cliente_id", estado.cliente)
+    .gte("ultima_mensagem_em", ini + "T00:00:00-03:00")
+    .lte("ultima_mensagem_em", fim + "T23:59:59.999-03:00")
+    .order("ultima_mensagem_em", { ascending: false }).limit(1000);
+  if (error) { $("#lista-leads").innerHTML = `<div class="vazio">Erro ao carregar: ${esc(error.message)}</div>`; return; }
+  estado.leads = data || [];
+  // Vendas feitas no período (um cliente pode comprar mais de uma vez)
+  const { data: vendas } = await sb.from("vendas").select("valor")
+    .eq("cliente_id", estado.cliente)
+    .gte("vendido_em", ini + "T00:00:00-03:00")
+    .lte("vendido_em", fim + "T23:59:59.999-03:00");
+  estado.vendas = vendas || [];
+  desenharKpisLeads(); desenharLeads();
+}
+
+function desenharKpisLeads() {
+  const L = estado.leads, vend = estado.vendas || [];
+  const anuncio = L.filter((l) => l.origem === "anuncio").length;
+  const fat = vend.reduce((s, v) => s + Number(v.valor || 0), 0);
+  const taxa = div(L.filter((l) => l.status === "vendido").length, L.length);
+  $("#kpis-leads").innerHTML = `
+    <div class="kpi"><div class="rot">Leads</div><div class="val">${num(L.length)}</div><div class="sub">${num(anuncio)} de anúncio</div></div>
+    <div class="kpi"><div class="rot">Em aberto</div><div class="val">${num(L.filter((l) => l.status === "novo" || l.status === "negociando").length)}</div><div class="sub">novos + negociando</div></div>
+    <div class="kpi lima"><div class="rot">Vendas</div><div class="val">${num(vend.length)}</div><div class="sub">${taxa === null ? "—" : (taxa * 100).toFixed(1).replace(".", ",") + "% de conversão"}</div></div>
+    <div class="kpi destaque"><div class="rot">Faturamento</div><div class="val">${brl(fat)}</div><div class="sub">${vend.length ? "ticket médio " + brl(fat / vend.length) : "no período"}</div></div>`;
+}
+
+function desenharLeads() {
+  const q = estado.busca.toLowerCase().replace(/\D/g, "") || estado.busca.toLowerCase();
+  const lista = estado.leads.filter((l) =>
+    (estado.filtro === "todos" || l.status === estado.filtro) &&
+    (!estado.busca || (l.nome || "").toLowerCase().includes(estado.busca.toLowerCase())
+      || (l.ig_username || "").toLowerCase().includes(estado.busca.toLowerCase().replace(/^@/, ""))
+      || (l.wa_id && String(l.wa_id).includes(q))));
+  if (!lista.length) {
+    $("#lista-leads").innerHTML = `<div class="vazio">${estado.leads.length ? "Nenhum lead com esse filtro." : "Nenhum lead neste período ainda.<br>Assim que alguém chamar no WhatsApp, ele aparece aqui sozinho."}</div>`;
+    return;
+  }
+  $("#lista-leads").innerHTML = lista.map((l) => {
+    const tag = l.origem === "anuncio" ? `<span class="tag tag-anuncio">Anúncio</span>`
+      : l.origem === "manual" ? `<span class="tag tag-manual">Manual</span>` : `<span class="tag tag-organico">Orgânico</span>`;
+    const direita = l.status === "vendido"
+      ? `<div class="vendido-box"><div class="vendido-valor">${brl(l.valor_venda)}</div>
+           <button class="link" data-desfazer="${l.id}">desfazer venda</button></div>`
+      : `<select class="sel" data-status="${l.id}">
+           ${["novo", "negociando", "perdido"].map((s) => `<option value="${s}" ${l.status === s ? "selected" : ""}>${{ novo: "Novo", negociando: "Negociando", perdido: "Perdido" }[s]}</option>`).join("")}
+         </select>
+         <button class="btn btn-lima" style="padding:9px 14px" data-vender="${l.id}">Vendido</button>`;
+    const ig = l.canal === "instagram";
+    const canal = ig ? `<span class="tag tag-ig">Instagram</span>` : `<span class="tag tag-wa">WhatsApp</span>`;
+    const contato = ig
+      ? (l.ig_username ? `<a class="wa" href="https://instagram.com/${esc(l.ig_username)}" target="_blank" rel="noopener">@${esc(l.ig_username)}</a>` : `<span>perfil do Instagram</span>`)
+      : `<a class="wa" href="https://wa.me/${esc(String(l.wa_id).replace(/\D/g, ""))}" target="_blank" rel="noopener">${esc(fone(l.wa_id))}</a>`;
+    // Contato antigo que chamou de novo depois de mais de 1 dia
+    const voltou = l.ultima_mensagem_em && (new Date(l.ultima_mensagem_em) - new Date(l.criado_em)) > 86400000;
+    const compras = Number(l.compras || 0);
+    const tagCliente = compras > 0 && l.status !== "vendido"
+      ? `<span class="tag tag-manual">Já comprou${compras > 1 ? " " + compras + "x" : ""}</span>`
+      : l.status === "vendido" && compras > 1 ? `<span class="tag tag-manual">${compras}ª compra</span>` : "";
+    const titulo = l.nome || (ig ? (l.ig_username ? "@" + l.ig_username : "Contato do Instagram") : fone(l.wa_id));
+    return `<div class="lead">
+      <div>
+        <div class="lead-nome">${esc(titulo)} ${canal} ${tag} ${tagCliente}</div>
+        <div class="lead-meta">
+          ${contato}
+          <span>${tempoRel(l.ultima_mensagem_em || l.criado_em)}</span>
+          ${voltou ? `<span>· voltou a chamar</span>` : ""}
+          ${l.anuncio_titulo ? `<span>· ${esc(l.anuncio_titulo)}</span>` : ""}
+        </div>
+      </div>
+      <div class="acoes">${direita}</div>
+    </div>`;
+  }).join("");
+}
+
+$("#filtro-status").addEventListener("click", (e) => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  document.querySelectorAll("#filtro-status .chip").forEach((x) => x.classList.toggle("ativo", x === b));
+  estado.filtro = b.dataset.s; desenharLeads();
+});
+$("#busca").addEventListener("input", (e) => { estado.busca = e.target.value.trim(); desenharLeads(); });
+
+$("#lista-leads").addEventListener("change", async (e) => {
+  const id = e.target.dataset.status; if (!id) return;
+  const { error } = await sb.from("leads").update({ status: e.target.value }).eq("id", id);
+  if (error) toast("Não foi possível atualizar: " + error.message);
+  else { const l = estado.leads.find((x) => x.id === id); if (l) l.status = e.target.value; desenharKpisLeads(); }
+});
+
+$("#lista-leads").addEventListener("click", async (e) => {
+  const v = e.target.closest("[data-vender]"), d = e.target.closest("[data-desfazer]");
+  if (v) {
+    const l = estado.leads.find((x) => x.id === v.dataset.vender);
+    estado.leadVenda = l.id;
+    $("#venda-quem").textContent = `${l.nome || (l.ig_username ? "@" + l.ig_username : fone(l.wa_id))} · qual foi o valor da venda?`;
+    $("#venda-valor").value = ""; $("#modal-venda").classList.remove("hide");
+    setTimeout(() => $("#venda-valor").focus(), 50);
+  }
+  if (d) {
+    if (!confirm("Desfazer esta venda? O lead volta para 'Negociando'.")) return;
+    const r = await chamarFuncao("marcar-venda", { lead_id: d.dataset.desfazer, desfazer: true });
+    if (r.ok) { toast(r.aviso || "Venda desfeita."); carregarLeads(true); } else toast(r.erro || "Erro ao desfazer");
+  }
+});
+
+async function chamarFuncao(nome, body) {
+  const { data, error } = await sb.functions.invoke(nome, { body });
+  if (error) {
+    let msg = error.message;
+    try { const j = await error.context.json(); msg = j.erro || msg; } catch {}
+    return { ok: false, erro: msg };
+  }
+  return data;
+}
+
+$("#form-venda").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const bruto = $("#venda-valor").value.trim().replace(/\./g, "").replace(",", ".");
+  const valor = Number(bruto);
+  if (!(valor > 0)) { toast("Informe um valor válido"); return; }
+  const btn = e.target.querySelector("[type=submit]"); btn.disabled = true;
+  const r = await chamarFuncao("marcar-venda", { lead_id: estado.leadVenda, valor });
+  btn.disabled = false;
+  if (!r.ok) { toast(r.erro || "Erro ao registrar venda"); return; }
+  $("#modal-venda").classList.add("hide");
+  toast(r.enviado_meta ? "Venda registrada e enviada para a Meta ✓" : "Venda registrada ✓");
+  carregarLeads(true);
+});
+
+$("#btn-novo-lead").addEventListener("click", () => {
+  $("#lead-nome").value = ""; $("#lead-tel").value = "";
+  $("#modal-lead").classList.remove("hide"); setTimeout(() => $("#lead-nome").focus(), 50);
+});
+$("#form-lead").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const bruto = $("#lead-tel").value.trim();
+  const nome = $("#lead-nome").value.trim() || null;
+  let linha;
+  if (bruto.startsWith("@")) {
+    const user = bruto.slice(1).trim().toLowerCase();
+    if (!/^[a-z0-9._]{1,30}$/.test(user)) { toast("Esse @ não parece válido"); return; }
+    linha = { canal: "instagram", ig_sid: "manual:" + user, ig_username: user };
+  } else {
+    let tel = bruto.replace(/\D/g, "");
+    if (tel.length < 10) { toast("Telefone com DDD ou @ do Instagram"); return; }
+    if (!tel.startsWith("55")) tel = "55" + tel;
+    linha = { canal: "whatsapp", wa_id: tel };
+  }
+  const { error } = await sb.from("leads").insert({ cliente_id: estado.cliente, nome, origem: "manual", ...linha });
+  if (error) { toast(error.code === "23505" ? "Esse contato já está na lista de leads" : "Erro: " + error.message); return; }
+  $("#modal-lead").classList.add("hide"); toast("Lead adicionado"); carregarLeads(true);
+});
+
+document.querySelectorAll("[data-fechar]").forEach((b) => b.addEventListener("click", () => b.closest(".fundo").classList.add("hide")));
+document.querySelectorAll(".fundo").forEach((f) => f.addEventListener("click", (e) => { if (e.target === f) f.classList.add("hide"); }));
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") document.querySelectorAll(".fundo").forEach((f) => f.classList.add("hide")); });
+
+// ---------- Relatório ----------
+async function carregarRelatorio() {
+  const { ini, fim } = periodo();
+  const c = estado.clientes.find((x) => x.id === estado.cliente);
+  $("#sync-info").textContent = !c?.ad_account_id ? "Conta de anúncios não vinculada"
+    : c.metricas_erro ? "Erro na última atualização"
+    : c.metricas_sincronizadas_em ? "Métricas de " + tempoRel(c.metricas_sincronizadas_em) : "Métricas ainda não sincronizadas";
+  $("#tabela-rel").innerHTML = `<tbody><tr><td style="text-align:center;padding:40px;color:var(--mut)">Carregando…</td></tr></tbody>`;
+  const porAnuncio = estado.visaoRel !== "campanha";
+  const { data, error } = await sb.rpc(porAnuncio ? "relatorio_por_anuncio" : "relatorio_campanhas",
+    { p_cliente: estado.cliente, p_inicio: ini, p_fim: fim });
+  if (error) { $("#tabela-rel").innerHTML = `<tbody><tr><td>Erro: ${esc(error.message)}</td></tr></tbody>`; return; }
+  // Normaliza as duas visões: rotulo, sub (linha de apoio) e se é a linha de orgânicos
+  const linhas = (data || []).map((r) => porAnuncio
+    ? { ...r, rotulo: r.anuncio, sub: r.campanhas, organico: r.anuncio === "Orgânico / sem anúncio" }
+    : { ...r, rotulo: r.campaign_nome || r.campaign_id, sub: null, organico: r.campaign_id === "sem_campanha" });
+  const T = linhas.reduce((t, r) => {
+    for (const k of ["gasto", "impressoes", "cliques", "mensagens", "leads_registrados", "vendas", "faturamento"]) t[k] += Number(r[k] || 0);
+    return t;
+  }, { gasto: 0, impressoes: 0, cliques: 0, mensagens: 0, leads_registrados: 0, vendas: 0, faturamento: 0 });
+  const vendasAnuncio = linhas.filter((r) => !r.organico).reduce((s, r) => s + Number(r.vendas), 0);
+  const fatAnuncio = linhas.filter((r) => !r.organico).reduce((s, r) => s + Number(r.faturamento), 0);
+  const cpm = div(T.gasto, T.mensagens), cpv = div(T.gasto, vendasAnuncio), roas = div(fatAnuncio, T.gasto);
+
+  $("#kpis-rel").innerHTML = `
+    <div class="kpi"><div class="rot">Valor gasto</div><div class="val">${brl(T.gasto)}</div><div class="sub">${num(T.impressoes)} impressões</div></div>
+    <div class="kpi"><div class="rot">Mensagens recebidas</div><div class="val">${num(T.mensagens)}</div><div class="sub">custo por mensagem ${cpm === null ? "—" : brl(cpm)}</div></div>
+    <div class="kpi lima"><div class="rot">Vendas de anúncio</div><div class="val">${num(vendasAnuncio)}</div><div class="sub">custo por venda ${cpv === null ? "—" : brl(cpv)}</div></div>
+    <div class="kpi destaque"><div class="rot">Faturamento de anúncio</div><div class="val">${brl(fatAnuncio)}</div><div class="sub">ROAS ${roas === null ? "—" : roas.toFixed(2).replace(".", ",") + "x"}</div></div>`;
+
+  if (!linhas.length) {
+    $("#tabela-rel").innerHTML = `<tbody><tr><td style="text-align:center;padding:40px;color:var(--mut)">Sem dados de campanhas ou vendas neste período.</td></tr></tbody>`;
+    return;
+  }
+  const celRoas = (f, g) => { const r = div(f, g); return r === null ? "—" : `<span class="${r >= 1 ? "bom" : "ruim"}">${r.toFixed(2).replace(".", ",")}x</span>`; };
+  const linha = (r, rot) => `<tr>
+    <td>${rot ?? esc(r.rotulo)}${!rot && r.sub ? `<div class="sub-linha">${esc(r.sub)}</div>` : ""}</td>
+    <td>${brl(r.gasto)}</td><td>${num(r.impressoes)}</td><td>${num(r.mensagens)}</td>
+    <td>${div(r.gasto, r.mensagens) === null ? "—" : brl(div(r.gasto, r.mensagens))}</td>
+    <td>${num(r.leads_registrados)}</td><td>${num(r.vendas)}</td>
+    <td>${Number(r.gasto) > 0 && Number(r.vendas) > 0 ? brl(div(r.gasto, r.vendas)) : "—"}</td>
+    <td>${brl(r.faturamento)}</td><td>${celRoas(r.faturamento, r.gasto)}</td></tr>`;
+  const camp = linhas.filter((r) => !r.organico);
+  const org = linhas.find((r) => r.organico);
+  const TA = { ...T, leads_registrados: T.leads_registrados - Number(org?.leads_registrados || 0), vendas: vendasAnuncio, faturamento: fatAnuncio };
+  $("#tabela-rel").innerHTML = `
+    <thead><tr><th>${porAnuncio ? "Anúncio" : "Campanha"}</th><th>Gasto</th><th>Impressões</th><th>Mensagens</th><th>Custo/msg</th><th>Leads</th><th>Vendas</th><th>Custo/venda</th><th>Faturamento</th><th>ROAS</th></tr></thead>
+    <tbody>${camp.map((r) => linha(r)).join("")}</tbody>
+    <tfoot>${camp.length ? linha(TA, "Total dos anúncios") : ""}${org ? linha(org, "Orgânico / sem anúncio").replace("<tr>", '<tr style="font-weight:400">') : ""}</tfoot>`;
+}
+
+estado.visaoRel = (() => { try { return localStorage.getItem("orbe_visao_rel") || "anuncio"; } catch { return "anuncio"; } })();
+document.querySelectorAll("#visao-rel .chip").forEach((b) => b.classList.toggle("ativo", b.dataset.v === estado.visaoRel));
+$("#visao-rel").addEventListener("click", (e) => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  estado.visaoRel = b.dataset.v;
+  try { localStorage.setItem("orbe_visao_rel", estado.visaoRel); } catch {}
+  document.querySelectorAll("#visao-rel .chip").forEach((x) => x.classList.toggle("ativo", x === b));
+  carregarRelatorio();
+});
+
+$("#btn-sync").addEventListener("click", async (e) => {
+  const b = e.currentTarget; b.disabled = true; b.textContent = "Atualizando…";
+  const r = await chamarFuncao("sync-metricas", {});
+  b.disabled = false; b.textContent = "Atualizar métricas";
+  if (!r.ok) { toast(r.erro || "Erro ao atualizar"); return; }
+  const erros = (r.clientes || []).filter((x) => x.erro);
+  toast(erros.length ? `Erro em ${erros[0].cliente}: ${erros[0].erro}` : "Métricas atualizadas ✓", erros.length ? 6000 : 3200);
+  const { data } = await sb.from("clientes").select("id, nome, ad_account_id, metricas_sincronizadas_em, metricas_erro").order("nome");
+  estado.clientes = data || estado.clientes;
+  carregarRelatorio();
+});
+
+iniciar();
+</script>
+</body>
+</html>
