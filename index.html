@@ -198,6 +198,7 @@ tfoot tr[style] td{font-weight:400;background:transparent}
           <button class="chip" data-s="negociando">Negociando</button>
           <button class="chip" data-s="vendido">Vendidos</button>
           <button class="chip" data-s="perdido">Perdidos</button>
+          <button class="chip" data-s="interno">Internos</button>
         </div>
         <div class="esp"></div>
         <input id="busca" class="sel" placeholder="Buscar nome, telefone ou @" style="min-width:200px">
@@ -430,7 +431,8 @@ async function carregarLeads(silencioso) {
 }
 
 function desenharKpisLeads() {
-  const L = estado.leads, vend = estado.vendas || [];
+  // Internos (equipe, família, fornecedores, clientes ativos) não contam como lead
+  const L = estado.leads.filter((l) => l.status !== "interno"), vend = estado.vendas || [];
   const anuncio = L.filter((l) => l.origem === "anuncio").length;
   const fat = vend.reduce((s, v) => s + Number(v.valor || 0), 0);
   const taxa = div(L.filter((l) => l.status === "vendido").length, L.length);
@@ -444,7 +446,7 @@ function desenharKpisLeads() {
 function desenharLeads() {
   const q = estado.busca.toLowerCase().replace(/\D/g, "") || estado.busca.toLowerCase();
   const lista = estado.leads.filter((l) =>
-    (estado.filtro === "todos" || l.status === estado.filtro) &&
+    (estado.filtro === "todos" ? l.status !== "interno" : l.status === estado.filtro) &&
     (!estado.busca || (l.nome || "").toLowerCase().includes(estado.busca.toLowerCase())
       || (l.ig_username || "").toLowerCase().includes(estado.busca.toLowerCase().replace(/^@/, ""))
       || (l.wa_id && String(l.wa_id).includes(q))));
@@ -459,7 +461,7 @@ function desenharLeads() {
       ? `<div class="vendido-box"><div class="vendido-valor">${brl(l.valor_venda)}</div>
            <button class="link" data-desfazer="${l.id}">desfazer venda</button></div>`
       : `<select class="sel" data-status="${l.id}">
-           ${["novo", "negociando", "perdido"].map((s) => `<option value="${s}" ${l.status === s ? "selected" : ""}>${{ novo: "Novo", negociando: "Negociando", perdido: "Perdido" }[s]}</option>`).join("")}
+           ${["novo", "negociando", "perdido", "interno"].map((s) => `<option value="${s}" ${l.status === s ? "selected" : ""}>${{ novo: "Novo", negociando: "Negociando", perdido: "Perdido", interno: "Interno / cliente" }[s]}</option>`).join("")}
          </select>
          <button class="btn btn-lima" style="padding:9px 14px" data-vender="${l.id}">Vendido</button>`;
     const ig = l.canal === "instagram";
@@ -500,7 +502,12 @@ $("#lista-leads").addEventListener("change", async (e) => {
   const id = e.target.dataset.status; if (!id) return;
   const { error } = await sb.from("leads").update({ status: e.target.value }).eq("id", id);
   if (error) toast("Não foi possível atualizar: " + error.message);
-  else { const l = estado.leads.find((x) => x.id === id); if (l) l.status = e.target.value; desenharKpisLeads(); }
+  else {
+    const l = estado.leads.find((x) => x.id === id); if (l) l.status = e.target.value;
+    desenharKpisLeads();
+    // Marcado como interno some de "Todos" (e volta ao sair de "Internos")
+    if (e.target.value === "interno" || estado.filtro === "interno") desenharLeads();
+  }
 });
 
 $("#lista-leads").addEventListener("click", async (e) => {
