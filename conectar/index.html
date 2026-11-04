@@ -164,8 +164,10 @@ function abrir(coexistencia) {
   erro("");
   if (!window.FB) return erro("A janela da Meta ainda está carregando. Tente de novo em alguns segundos.");
   travar(true);
-  const extras = { setup: {}, sessionInfoVersion: "3" };
-  if (coexistencia) extras.featureType = "whatsapp_business_app_onboarding";
+  // Cadastro incorporado v5: conectar o WhatsApp Business que já está no celular (coexistência) vem ligado por padrão.
+  // v2/v3 foram desativadas pela Meta em 15/10/2026.
+  const extras = { version: "v5" };
+  if (!coexistencia) extras.features = [{ name: "whatsapp_business_app_onboarding", enabled: false }];
   FB.login((resp) => {
     if (resp.authResponse?.code) {
       codigo = resp.authResponse.code;
