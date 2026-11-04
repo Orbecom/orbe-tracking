@@ -44,9 +44,9 @@ ol li::before{content:counter(p);position:absolute;left:0;top:0;width:28px;heigh
   background:var(--card2);color:var(--roxo2);font:700 13px/28px "Unbounded",sans-serif;text-align:center}
 ol li b{display:block}
 ol li span{color:var(--mut);font-size:14.5px}
-button.principal{width:100%;border:0;border-radius:14px;padding:16px 18px;cursor:pointer;
+button.principal,a.principal{width:100%;border:0;border-radius:14px;padding:16px 18px;cursor:pointer;
   background:var(--roxo);color:#fff;font:700 16px "Open Sans",sans-serif;display:flex;align-items:center;justify-content:center;gap:10px}
-button.principal:hover{background:var(--roxo2)}
+button.principal:hover,a.principal:hover{background:var(--roxo2)}
 button.principal:disabled{opacity:.55;cursor:default}
 .alt{display:block;margin:16px auto 0;background:none;border:0;color:var(--mut);font:14px "Open Sans",sans-serif;text-decoration:underline;cursor:pointer}
 .aviso{border-radius:12px;padding:14px 16px;margin-top:18px;font-size:15px}
@@ -107,6 +107,7 @@ button.principal:disabled{opacity:.55;cursor:default}
       <h1>WhatsApp conectado</h1>
       <p class="sub" id="msg-pronto"></p>
       <div class="aviso ok">Para conferir, peça para alguém mandar um "oi" para esse número. O contato aparece no painel em poucos segundos.</div>
+      <a class="principal" href="/" style="margin-top:18px;text-decoration:none">Ir para o painel</a>
     </div>
   </div>
 

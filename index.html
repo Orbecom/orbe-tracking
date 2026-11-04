@@ -66,6 +66,9 @@ header{position:sticky;top:0;z-index:20;background:var(--header);backdrop-filter
 .aba.ativa{color:var(--texto);border-color:var(--roxo2)}
 :root[data-tema="escuro"] .aba.ativa{border-color:var(--lima)}
 main{max-width:1180px;margin:0 auto;padding:22px 20px 80px}
+.aviso-wa{display:flex;align-items:center;gap:16px;justify-content:space-between;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--roxo);border-radius:var(--radius);padding:16px 18px;margin-bottom:18px;box-shadow:var(--sombra)}
+.aviso-wa b{display:block;font-size:15px;margin-bottom:2px}
+.aviso-wa span{color:var(--mut);font-size:14px}
 .linha-filtros{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
 .linha-filtros .esp{flex:1}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
@@ -190,6 +193,13 @@ tfoot tr[style] td{font-weight:400;background:transparent}
   <main>
     <!-- LEADS -->
     <div id="aba-leads">
+      <div class="aviso-wa hide" id="aviso-wa">
+        <div>
+          <b>Conecte o WhatsApp da empresa</b>
+          <span>Assim os contatos que chegam pelos anúncios aparecem aqui sozinhos. Leva uns 5 minutos, com o celular da empresa em mãos.</span>
+        </div>
+        <button class="btn btn-lima" id="btn-conectar-wa" type="button">Conectar WhatsApp</button>
+      </div>
       <div class="kpis" id="kpis-leads"></div>
       <div class="linha-filtros">
         <div class="chips" id="filtro-status">
@@ -362,7 +372,7 @@ $("#btn-tema").addEventListener("click", () => {
 async function abrirApp() {
   $("#tela-login").classList.add("hide"); $("#tela-app").classList.remove("hide");
   const [{ data: clientes }, { data: papel }] = await Promise.all([
-    sb.from("clientes").select("id, nome, ad_account_id, metricas_sincronizadas_em, metricas_erro").order("nome"),
+    sb.from("clientes").select("id, nome, ad_account_id, wa_phone_number_id, metricas_sincronizadas_em, metricas_erro").order("nome"),
     sb.rpc("meu_papel"),
   ]);
   estado.clientes = clientes || []; estado.papel = papel || "cliente";
@@ -396,7 +406,23 @@ document.querySelectorAll(".aba").forEach((b) => b.addEventListener("click", () 
   recarregar();
 }));
 
-function recarregar() { estado.aba === "leads" ? carregarLeads() : carregarRelatorio(); }
+function recarregar() { atualizarAvisoWa(); estado.aba === "leads" ? carregarLeads() : carregarRelatorio(); }
+
+// Botão "Conectar WhatsApp": só aparece enquanto o cliente ainda não tem WhatsApp conectado
+function atualizarAvisoWa() {
+  const c = estado.clientes.find((x) => x.id === estado.cliente);
+  $("#aviso-wa").classList.toggle("hide", !c || !!c.wa_phone_number_id);
+}
+$("#btn-conectar-wa").addEventListener("click", async (e) => {
+  const b = e.currentTarget; b.disabled = true; b.textContent = "Abrindo…";
+  const { data, error } = await sb.rpc("gerar_meu_link_whatsapp", { p_cliente: estado.cliente });
+  if (error || !data) {
+    b.disabled = false; b.textContent = "Conectar WhatsApp";
+    toast("Não foi possível abrir a conexão: " + (error?.message || "tente de novo"), 6000);
+    return;
+  }
+  location.href = data;
+});
 
 function ouvirTempoReal() {
   if (estado.canal) sb.removeChannel(estado.canal);
@@ -646,7 +672,7 @@ $("#btn-sync").addEventListener("click", async (e) => {
   if (!r.ok) { toast(r.erro || "Erro ao atualizar"); return; }
   const erros = (r.clientes || []).filter((x) => x.erro);
   toast(erros.length ? `Erro em ${erros[0].cliente}: ${erros[0].erro}` : "Métricas atualizadas ✓", erros.length ? 6000 : 3200);
-  const { data } = await sb.from("clientes").select("id, nome, ad_account_id, metricas_sincronizadas_em, metricas_erro").order("nome");
+  const { data } = await sb.from("clientes").select("id, nome, ad_account_id, wa_phone_number_id, metricas_sincronizadas_em, metricas_erro").order("nome");
   estado.clientes = data || estado.clientes;
   carregarRelatorio();
 });
