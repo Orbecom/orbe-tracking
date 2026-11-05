@@ -97,6 +97,8 @@ main{max-width:1180px;margin:0 auto;padding:22px 20px 80px}
 .tag-manual{background:var(--t-man-bg);color:var(--amar)}
 .tag-wa{background:var(--t-wa-bg);color:var(--t-wa)}
 .tag-ig{background:var(--t-ig-bg);color:var(--t-ig)}
+.tag-ms{background:#e7f0ff;color:#0866ff}
+[data-tema="escuro"] .tag-ms{background:#0f2447;color:#7fb0ff}
 .acoes{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .acoes .sel{padding:8px 10px;font-size:14px}
 .vendido-box{text-align:right}
@@ -429,7 +431,7 @@ function ouvirTempoReal() {
   estado.canal = sb.channel("leads-" + estado.cliente)
     .on("postgres_changes", { event: "*", schema: "public", table: "leads", filter: `cliente_id=eq.${estado.cliente}` },
       (p) => {
-        if (p.eventType === "INSERT") toast(`Novo lead: ${p.new.nome || (p.new.ig_username ? "@" + p.new.ig_username : fone(p.new.wa_id))}`);
+        if (p.eventType === "INSERT") toast(`Novo lead: ${p.new.nome || (p.new.ig_username ? "@" + p.new.ig_username : p.new.canal === "messenger" ? "Messenger" : fone(p.new.wa_id))}`);
         if (estado.aba === "leads") carregarLeads(true);
       })
     .subscribe();
@@ -440,7 +442,7 @@ async function carregarLeads(silencioso) {
   const { ini, fim } = periodo();
   if (!silencioso) $("#lista-leads").innerHTML = `<div class="vazio">Carregando…</div>`;
   const { data, error } = await sb.from("leads")
-    .select("id, canal, wa_id, ig_username, nome, origem, anuncio_titulo, status, valor_venda, compras, capi_enviado_em, capi_erro, criado_em, ultima_mensagem_em")
+    .select("id, canal, wa_id, ig_username, fb_psid, nome, origem, anuncio_titulo, status, valor_venda, compras, capi_enviado_em, capi_erro, criado_em, ultima_mensagem_em")
     .eq("cliente_id", estado.cliente)
     .gte("ultima_mensagem_em", ini + "T00:00:00-03:00")
     .lte("ultima_mensagem_em", fim + "T23:59:59.999-03:00")
@@ -490,9 +492,10 @@ function desenharLeads() {
            ${["novo", "negociando", "perdido", "interno"].map((s) => `<option value="${s}" ${l.status === s ? "selected" : ""}>${{ novo: "Novo", negociando: "Negociando", perdido: "Perdido", interno: "Interno / cliente" }[s]}</option>`).join("")}
          </select>
          <button class="btn btn-lima" style="padding:9px 14px" data-vender="${l.id}">Vendido</button>`;
-    const ig = l.canal === "instagram";
-    const canal = ig ? `<span class="tag tag-ig">Instagram</span>` : `<span class="tag tag-wa">WhatsApp</span>`;
-    const contato = ig
+    const ig = l.canal === "instagram", ms = l.canal === "messenger";
+    const canal = ig ? `<span class="tag tag-ig">Instagram</span>`
+      : ms ? `<span class="tag tag-ms">Messenger</span>` : `<span class="tag tag-wa">WhatsApp</span>`;
+    const contato = ms ? `<span>conversa no Messenger da página</span>` : ig
       ? (l.ig_username ? `<a class="wa" href="https://instagram.com/${esc(l.ig_username)}" target="_blank" rel="noopener">@${esc(l.ig_username)}</a>` : `<span>perfil do Instagram</span>`)
       : `<a class="wa" href="https://wa.me/${esc(String(l.wa_id).replace(/\D/g, ""))}" target="_blank" rel="noopener">${esc(fone(l.wa_id))}</a>`;
     // Contato antigo que chamou de novo depois de mais de 1 dia
@@ -501,7 +504,7 @@ function desenharLeads() {
     const tagCliente = compras > 0 && l.status !== "vendido"
       ? `<span class="tag tag-manual">Já comprou${compras > 1 ? " " + compras + "x" : ""}</span>`
       : l.status === "vendido" && compras > 1 ? `<span class="tag tag-manual">${compras}ª compra</span>` : "";
-    const titulo = l.nome || (ig ? (l.ig_username ? "@" + l.ig_username : "Contato do Instagram") : fone(l.wa_id));
+    const titulo = l.nome || (ms ? "Contato do Messenger" : ig ? (l.ig_username ? "@" + l.ig_username : "Contato do Instagram") : fone(l.wa_id));
     return `<div class="lead">
       <div>
         <div class="lead-nome">${esc(titulo)} ${canal} ${tag} ${tagCliente}</div>
@@ -541,7 +544,7 @@ $("#lista-leads").addEventListener("click", async (e) => {
   if (v) {
     const l = estado.leads.find((x) => x.id === v.dataset.vender);
     estado.leadVenda = l.id;
-    $("#venda-quem").textContent = `${l.nome || (l.ig_username ? "@" + l.ig_username : fone(l.wa_id))} · qual foi o valor da venda?`;
+    $("#venda-quem").textContent = `${l.nome || (l.ig_username ? "@" + l.ig_username : l.canal === "messenger" ? "Contato do Messenger" : fone(l.wa_id))} · qual foi o valor da venda?`;
     $("#venda-valor").value = ""; $("#modal-venda").classList.remove("hide");
     setTimeout(() => $("#venda-valor").focus(), 50);
   }
