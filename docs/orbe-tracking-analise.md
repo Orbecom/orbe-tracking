@@ -55,11 +55,12 @@ Ferramenta brasileira (tintim.app) que rastreia de onde vêm as conversas de Wha
 |---|---|
 | Banco de dados (etapas, histórico, eventos, funções do painel) | No ar desde 06/11 |
 | Função `disparar-eventos` (envio à Meta por etapa) | No ar desde 06/11 |
-| Tela nova (Leads + Painel) | No branch `ccr-5c3a0769-s6n6uy`; falta publicar no tracking.orbemedia.com.br |
-| Envio real de eventos além de "Compra" | A verificar após publicar (aparece no detalhe do lead) |
+| Tela nova (Leads + Painel) | No ar em tracking.orbemedia.com.br desde 06/11 |
+| Envio real de eventos além de "Compra" | A verificar no primeiro uso (aparece no detalhe do lead) |
 
 ### 5. Próximos passos
 
-- Publicar a tela nova.
+- Conferir no uso real: arrastar leads entre etapas, registrar uma venda e ver o evento "enviado" no detalhe do lead.
+- Ligar os eventos "Lead" (entrada) e "Lead qualificado" (intermediária) nos clientes com anúncio.
 - Módulo 2: frase combinada do atendente e valor lido da mensagem (WhatsApp por coexistência).
 - Depois: link rastreável e pixel no site; detecção de vendas por IA; Google Ads.
