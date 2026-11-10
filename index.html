@@ -1238,17 +1238,17 @@ async function carregarTabela() {
   const camp = linhas.filter((r) => !r.organico), org = linhas.find((r) => r.organico);
   const vendasAnuncio = camp.reduce((s, r) => s + Number(r.vendas), 0);
   const fatAnuncio = camp.reduce((s, r) => s + Number(r.faturamento), 0);
-  const celRoas = (f, g) => { const r = div(f, g); return r === null ? "—" : `<span class="${r >= 1 ? "bom" : "ruim"}">${r.toFixed(2).replace(".", ",")}x</span>`; };
   const linha = (r, rot) => `<tr>
     <td>${rot ?? esc(r.rotulo)}${!rot && r.sub ? `<div class="sub-linha">${esc(r.sub)}</div>` : ""}</td>
-    <td>${brl(r.gasto)}</td><td>${num(r.impressoes)}</td><td>${num(r.mensagens)}</td>
+    <td>${brl(r.gasto)}</td><td>${num(r.impressoes)}</td><td>${num(r.cliques)}</td>
+    <td>${div(r.cliques, r.impressoes) === null ? "—" : pct(div(r.cliques, r.impressoes), 2)}</td>
+    <td>${div(r.gasto * 1000, r.impressoes) === null || !Number(r.gasto) ? "—" : brl(div(r.gasto * 1000, r.impressoes))}</td>
+    <td>${num(r.mensagens)}</td>
     <td>${div(r.gasto, r.mensagens) === null ? "—" : brl(div(r.gasto, r.mensagens))}</td>
-    <td>${num(r.leads_registrados)}</td><td>${num(r.vendas)}</td>
-    <td>${Number(r.gasto) > 0 && Number(r.vendas) > 0 ? brl(div(r.gasto, r.vendas)) : "—"}</td>
-    <td>${brl(r.faturamento)}</td><td>${celRoas(r.faturamento, r.gasto)}</td></tr>`;
+    <td>${num(r.leads_registrados)}</td><td>${num(r.vendas)}</td></tr>`;
   const TA = { ...T, leads_registrados: T.leads_registrados - Number(org?.leads_registrados || 0), vendas: vendasAnuncio, faturamento: fatAnuncio };
   $("#tabela-rel").innerHTML = `
-    <thead><tr><th>${porAnuncio ? "Anúncio" : "Campanha"}</th><th>Gasto</th><th>Impressões</th><th>Mensagens</th><th>Custo/msg</th><th>Leads</th><th>Vendas</th><th>Custo/venda</th><th>Faturamento</th><th>ROAS</th></tr></thead>
+    <thead><tr><th>${porAnuncio ? "Anúncio" : "Campanha"}</th><th>Gasto</th><th>Impressões</th><th>Cliques</th><th>CTR</th><th>CPM</th><th>Mensagens</th><th>Custo/msg</th><th>Leads</th><th>Vendas</th></tr></thead>
     <tbody>${camp.map((r) => linha(r)).join("")}</tbody>
     <tfoot>${camp.length ? linha(TA, "Total dos anúncios") : ""}${org ? linha(org, "Orgânico / sem anúncio").replace("<tr>", '<tr style="font-weight:400">') : ""}</tfoot>`;
   desenharDashRel();
