@@ -271,6 +271,7 @@ tfoot tr[style] td{font-weight:400;background:transparent}
     <nav class="abas">
       <button class="aba ativa" data-aba="leads">Leads</button>
       <button class="aba" data-aba="painel">Painel</button>
+      <button class="aba" data-aba="relatorios">Relatórios</button>
     </nav>
   </header>
 
@@ -336,14 +337,44 @@ tfoot tr[style] td{font-weight:400;background:transparent}
           <div class="canais" id="canais"></div>
         </div>
       </div>
+    </div>
 
+    <!-- RELATÓRIOS -->
+    <div id="aba-relatorios" class="hide">
       <div class="linha-filtros">
-        <h2 class="secao-tit" style="margin:0">Resultado das campanhas</h2>
+        <h2 class="secao-tit" style="margin:0">Relatórios</h2>
+        <span class="nota" style="margin:0" id="rel-periodo"></span>
         <div class="esp"></div>
         <div class="chips" id="visao-rel">
           <button class="chip ativo" data-v="anuncio">Por anúncio</button>
           <button class="chip" data-v="campanha">Por campanha</button>
         </div>
+      </div>
+      <div class="kpis" id="kpis-rel"></div>
+      <div class="grade-painel" id="grade-rel">
+        <div class="bloco">
+          <h3>Investimento</h3>
+          <div class="desc" id="desc-rel-gasto">Quanto foi gasto em cada item</div>
+          <div class="canais" id="rel-gasto"></div>
+        </div>
+        <div class="bloco">
+          <h3>Mensagens e custo por mensagem</h3>
+          <div class="desc">Mensagens recebidas pelos anúncios e quanto custou cada uma</div>
+          <div class="canais" id="rel-msg"></div>
+        </div>
+        <div class="bloco">
+          <h3>Faturamento</h3>
+          <div class="desc">Vendas marcadas no Orbe Tracking, atribuídas ao anúncio</div>
+          <div class="canais" id="rel-fat"></div>
+        </div>
+        <div class="bloco">
+          <h3>Retorno (ROAS)</h3>
+          <div class="desc">Quanto voltou em vendas para cada R$ 1 investido</div>
+          <div class="canais" id="rel-roas"></div>
+        </div>
+      </div>
+      <div class="linha-filtros">
+        <h2 class="secao-tit" style="margin:0" id="rel-tit-lista">Resultado das campanhas</h2>
       </div>
       <div class="tabela-wrap"><table id="tabela-rel"></table></div>
       <p class="nota">Valor gasto, impressões e mensagens vêm do Meta Ads. Vendas e faturamento são as vendas marcadas aqui no Orbe Tracking, atribuídas ao anúncio que trouxe o lead. Anúncios com o mesmo nome em conjuntos diferentes aparecem somados. Leads orgânicos aparecem na linha "Orgânico / sem anúncio".</p>
@@ -568,10 +599,12 @@ document.querySelectorAll(".aba").forEach((b) => b.addEventListener("click", () 
   estado.aba = b.dataset.aba;
   $("#aba-leads").classList.toggle("hide", estado.aba !== "leads");
   $("#aba-painel").classList.toggle("hide", estado.aba !== "painel");
+  $("#aba-relatorios").classList.toggle("hide", estado.aba !== "relatorios");
+  esconderTip();
   recarregar();
 }));
 
-function recarregar() { atualizarAvisoWa(); estado.aba === "leads" ? carregarLeads() : carregarPainel(); }
+function recarregar() { atualizarAvisoWa(); if (estado.aba === "leads") carregarLeads(); else if (estado.aba === "painel") carregarPainel(); else carregarTabela(); }
 
 // Botão "Conectar WhatsApp": aparece para toda empresa cujo WhatsApp ainda não foi conectado e confirmado
 function atualizarAvisoWa() {
@@ -1033,7 +1066,6 @@ async function carregarPainel() {
   if (error) { $("#kpis-painel").innerHTML = `<div class="vazio" style="grid-column:1/-1">Erro: ${esc(error.message)}</div>`; return; }
   estado.painel = data;
   desenharPainel();
-  carregarTabela();
 }
 
 // Variação em relação ao período anterior. menorMelhor: para custos, cair é bom.
@@ -1161,16 +1193,16 @@ function mostrarTip(alvo, x, y) {
   tip.style.top = Math.max(8, y - r.height - 12) + "px";
 }
 function esconderTip() { tip.classList.add("hide"); document.querySelectorAll(".alvo.foco").forEach((a) => a.classList.remove("foco")); }
-$("#aba-painel").addEventListener("pointermove", (e) => {
+document.querySelector("main").addEventListener("pointermove", (e) => {
   const a = e.target.closest(".alvo, [data-tip]");
   if (a) mostrarTip(a, e.clientX, e.clientY); else esconderTip();
 });
-$("#aba-painel").addEventListener("pointerleave", esconderTip);
-$("#aba-painel").addEventListener("focusin", (e) => {
+document.querySelector("main").addEventListener("pointerleave", esconderTip);
+document.querySelector("main").addEventListener("focusin", (e) => {
   const a = e.target.closest(".alvo, [data-tip]"); if (!a) return;
   a.classList.add("foco"); const r = a.getBoundingClientRect(); mostrarTip(a, r.left + r.width / 2, r.top);
 });
-$("#aba-painel").addEventListener("focusout", esconderTip);
+document.querySelector("main").addEventListener("focusout", esconderTip);
 window.addEventListener("scroll", esconderTip, { passive: true });
 // Redesenha os gráficos quando a largura muda (girar o celular, redimensionar a janela)
 let larguraAnterior = window.innerWidth;
@@ -1178,6 +1210,7 @@ window.addEventListener("resize", () => {
   clearTimeout(window._rz);
   window._rz = setTimeout(() => {
     if (window.innerWidth !== larguraAnterior && estado.aba === "painel" && estado.painel) { larguraAnterior = window.innerWidth; desenharPainel(); }
+    else if (window.innerWidth !== larguraAnterior && estado.aba === "relatorios" && estado.relLinhas) { larguraAnterior = window.innerWidth; desenharDashRel(); }
   }, 150);
 });
 
@@ -1197,6 +1230,7 @@ async function carregarTabela() {
     $("#tabela-rel").innerHTML = `<tbody><tr><td style="text-align:center;padding:40px;color:var(--mut)">Sem dados de campanhas ou vendas neste período.</td></tr></tbody>`;
     return;
   }
+  estado.relLinhas = linhas; estado.relPorAnuncio = porAnuncio;
   const T = linhas.reduce((t, r) => {
     for (const k of ["gasto", "impressoes", "cliques", "mensagens", "leads_registrados", "vendas", "faturamento"]) t[k] += Number(r[k] || 0);
     return t;
@@ -1217,6 +1251,45 @@ async function carregarTabela() {
     <thead><tr><th>${porAnuncio ? "Anúncio" : "Campanha"}</th><th>Gasto</th><th>Impressões</th><th>Mensagens</th><th>Custo/msg</th><th>Leads</th><th>Vendas</th><th>Custo/venda</th><th>Faturamento</th><th>ROAS</th></tr></thead>
     <tbody>${camp.map((r) => linha(r)).join("")}</tbody>
     <tfoot>${camp.length ? linha(TA, "Total dos anúncios") : ""}${org ? linha(org, "Orgânico / sem anúncio").replace("<tr>", '<tr style="font-weight:400">') : ""}</tfoot>`;
+  desenharDashRel();
+}
+
+// Dashboard da aba Relatórios: monta tudo a partir das mesmas linhas da tabela
+function desenharDashRel() {
+  const linhas = estado.relLinhas || [], porAnuncio = estado.relPorAnuncio;
+  const camp = linhas.filter((r) => !r.organico);
+  const soma = (k) => camp.reduce((t, r) => t + Number(r[k] || 0), 0);
+  const gasto = soma("gasto"), msgs = soma("mensagens"), imp = soma("impressoes"), vendas = soma("vendas"), fat = soma("faturamento");
+  const leads = soma("leads_registrados");
+  const roas = div(fat, gasto), cpm = div(gasto, msgs), cpv = vendas > 0 ? div(gasto, vendas) : null;
+  const { ini, fim } = periodo();
+  $("#rel-periodo").textContent = ini === fim ? diaCurto(ini) : `${diaCurto(ini)} a ${diaCurto(fim)}`;
+  $("#rel-tit-lista").textContent = porAnuncio ? "Resultado por anúncio" : "Resultado por campanha";
+  if (!camp.length) {
+    $("#kpis-rel").innerHTML = `<div class="vazio" style="grid-column:1/-1">Sem dados de anúncios neste período.</div>`;
+    $("#grade-rel").classList.add("hide"); return;
+  }
+  $("#grade-rel").classList.remove("hide");
+  $("#kpis-rel").innerHTML = `
+    <div class="kpi"><div class="rot">Investido</div><div class="val">${brl(gasto)}</div><div class="sub">${num(imp)} impressões</div></div>
+    <div class="kpi"><div class="rot">Mensagens</div><div class="val">${num(msgs)}</div><div class="sub">${cpm === null ? "sem mensagens" : brl(cpm) + " por mensagem"}</div></div>
+    <div class="kpi lima"><div class="rot">Vendas</div><div class="val">${num(vendas)}</div><div class="sub">${cpv === null ? "sem vendas de anúncio" : brl(cpv) + " por venda"}</div></div>
+    <div class="kpi destaque"><div class="rot">ROAS</div><div class="val">${roas === null ? "—" : roas.toFixed(2).replace(".", ",") + "x"}</div><div class="sub">${brl(fat)} faturados · ${num(leads)} leads</div></div>`;
+
+  const nome = (r) => esc(r.rotulo);
+  const ranking = (el, campo, fmt, extra) => {
+    const itens = camp.map((r) => ({ r, v: campo(r) })).filter((x) => x.v !== null && x.v > 0).sort((a, b) => b.v - a.v).slice(0, 8);
+    if (!itens.length) { $(el).innerHTML = `<div class="nota">Sem dados neste período.</div>`; return; }
+    const max = Math.max(...itens.map((x) => x.v));
+    $(el).innerHTML = itens.map(({ r, v }) => `<div class="funil-linha" tabindex="0" data-tip="<b>${nome(r)}</b>${extra(r)}">
+      <div class="nome" title="${esc(r.rotulo)}">${nome(r)}</div>
+      <div class="funil-barra"><div style="width:${(v / max) * 100}%"></div></div>
+      <div class="num">${fmt(v)}</div></div>`).join("");
+  };
+  ranking("#rel-gasto", (r) => Number(r.gasto), brl, (r) => `Gasto: ${brl(r.gasto)}<br>${num(r.impressoes)} impressões`);
+  ranking("#rel-msg", (r) => Number(r.mensagens), (v) => num(v), (r) => `${num(r.mensagens)} mensagens<br>Custo por mensagem: ${div(r.gasto, r.mensagens) === null ? "—" : brl(div(r.gasto, r.mensagens))}`);
+  ranking("#rel-fat", (r) => Number(r.faturamento), brl, (r) => `Faturamento: ${brl(r.faturamento)}<br>${num(r.vendas)} venda${Number(r.vendas) === 1 ? "" : "s"}`);
+  ranking("#rel-roas", (r) => div(r.faturamento, r.gasto), (v) => v.toFixed(2).replace(".", ",") + "x", (r) => `Investido: ${brl(r.gasto)}<br>Faturado: ${brl(r.faturamento)}`);
 }
 
 estado.visaoRel = ler("orbe_visao_rel", "anuncio");
