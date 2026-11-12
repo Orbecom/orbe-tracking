@@ -242,12 +242,30 @@ tfoot tr[style] td{font-weight:400;background:transparent}
   <div class="login-box">
     <div class="marca"><svg class="estrela"><use href="#estrela"/></svg>Orbe Tracking</div>
     <h1>Seus leads e vendas, num lugar só.</h1>
-    <p>Digite seu e-mail e enviaremos um link de acesso. Sem senha.</p>
+    <p>Entre com seu e-mail e sua senha.</p>
     <form id="form-login">
-      <input id="email" class="campo" type="email" required placeholder="seu@email.com" autocomplete="email">
-      <button class="btn btn-lima btn-full" type="submit">Receber link de acesso</button>
+      <input id="email" class="campo" type="email" required placeholder="seu@email.com" autocomplete="username" style="margin-bottom:10px">
+      <input id="senha" class="campo" type="password" required placeholder="Senha" autocomplete="current-password" minlength="6" style="margin-bottom:14px">
+      <button class="btn btn-lima btn-full" type="submit">Entrar</button>
     </form>
+    <button id="btn-link" type="button" class="btn btn-fantasma btn-full" style="margin-top:12px;font-weight:600">Primeiro acesso ou esqueci a senha</button>
     <div id="login-aviso" class="aviso hide"></div>
+  </div>
+</section>
+
+<!-- DEFINIR SENHA -->
+<section id="tela-senha" class="login hide">
+  <div class="login-box">
+    <div class="marca"><svg class="estrela"><use href="#estrela"/></svg>Orbe Tracking</div>
+    <h1>Crie sua senha</h1>
+    <p>Use pelo menos 8 caracteres. Nos próximos acessos você entra só com e-mail e senha.</p>
+    <form id="form-senha">
+      <input id="nova-senha" class="campo" type="password" required minlength="8" placeholder="Nova senha" autocomplete="new-password" style="margin-bottom:10px">
+      <input id="nova-senha2" class="campo" type="password" required minlength="8" placeholder="Repita a senha" autocomplete="new-password" style="margin-bottom:14px">
+      <button class="btn btn-lima btn-full" type="submit">Salvar senha e entrar</button>
+    </form>
+    <button id="btn-pular-senha" type="button" class="btn btn-fantasma btn-full hide" style="margin-top:12px;font-weight:600">Agora não</button>
+    <div id="senha-aviso" class="aviso hide"></div>
   </div>
 </section>
 
@@ -515,37 +533,85 @@ async function iniciar() {
   // então a prévia de link do WhatsApp não consome o acesso.
   const q = new URLSearchParams(location.search);
   let erroAcesso = null;
+  // Link do e-mail traz o token na URL (#access_token=...); link da agência traz ?acesso=
+  let viaLink = /access_token=/.test(location.hash);
   if (q.get("acesso")) {
     // Não desloga antes: se o link já foi usado, quem já estava logado continua logado
     const { error } = await sb.auth.verifyOtp({ token_hash: q.get("acesso"), type: q.get("tipo") || "magiclink" });
     history.replaceState(null, "", location.pathname);
+    if (!error) viaLink = true;
     if (error) erroAcesso = "Esse link de acesso já foi usado ou venceu. Peça um novo para a Orbe Media ou receba um link pelo e-mail.";
   }
   const { data: { session } } = await sb.auth.getSession();
+  if (viaLink && session) acabouDeVirDeLink = true;
   if (erroAcesso && !session) {
     mostrarLogin();
     const av = $("#login-aviso"); av.className = "aviso erro"; av.textContent = erroAcesso;
   }
-  if (session) await abrirApp(); else mostrarLogin();
-  sb.auth.onAuthStateChange((ev) => {
-    if (ev === "SIGNED_IN" && $("#tela-app").classList.contains("hide")) abrirApp();
+  if (session) await entrar(session); else mostrarLogin();
+  sb.auth.onAuthStateChange((ev, sess) => {
+    if (ev === "SIGNED_IN" && sess && $("#tela-app").classList.contains("hide") && $("#tela-senha").classList.contains("hide")) entrar(sess);
     if (ev === "SIGNED_OUT") mostrarLogin();
   });
 }
-function mostrarLogin() { $("#tela-app").classList.add("hide"); $("#tela-login").classList.remove("hide"); }
+let acabouDeVirDeLink = false;
+// Quem ainda não tem senha (ou entrou por link para redefinir) cria uma antes de abrir o painel
+async function entrar(session) {
+  const temSenha = session?.user?.user_metadata?.senha_definida === true;
+  if (!temSenha || acabouDeVirDeLink) { mostrarSenha(temSenha); return; }
+  await abrirApp();
+}
+function mostrarSenha(podePular) {
+  $("#tela-login").classList.add("hide"); $("#tela-app").classList.add("hide");
+  $("#tela-senha").classList.remove("hide");
+  $("#btn-pular-senha").classList.toggle("hide", !podePular);
+}
+function mostrarLogin() { $("#tela-app").classList.add("hide"); $("#tela-senha").classList.add("hide"); $("#tela-login").classList.remove("hide"); }
 
 $("#form-login").addEventListener("submit", async (e) => {
   e.preventDefault();
   const btn = e.target.querySelector("button"), av = $("#login-aviso");
-  btn.disabled = true; av.className = "aviso"; av.classList.remove("hide");
-  const { error } = await sb.auth.signInWithOtp({
+  btn.disabled = true; av.className = "aviso"; av.classList.add("hide");
+  const { data, error } = await sb.auth.signInWithPassword({
     email: $("#email").value.trim(),
-    options: { emailRedirectTo: location.origin + location.pathname },
+    password: $("#senha").value,
   });
   btn.disabled = false;
-  if (error) { av.classList.add("erro"); av.textContent = "Não foi possível enviar: " + error.message; }
-  else av.textContent = "Pronto! Abra o link que enviamos para o seu e-mail neste aparelho.";
+  if (error) {
+    av.classList.remove("hide"); av.classList.add("erro");
+    av.textContent = /invalid login/i.test(error.message)
+      ? "E-mail ou senha incorretos. Se ainda não criou sua senha, use \"Primeiro acesso ou esqueci a senha\"."
+      : "Não foi possível entrar: " + error.message;
+  } else if (data?.session) {
+    acabouDeVirDeLink = false;
+    await entrar(data.session);
+  }
 });
+// Primeiro acesso / esqueci a senha: envia um link por e-mail; ao abrir, a pessoa cria uma senha nova
+$("#btn-link").addEventListener("click", async () => {
+  const av = $("#login-aviso"), email = $("#email").value.trim();
+  av.className = "aviso"; av.classList.remove("hide");
+  if (!email) { av.classList.add("erro"); av.textContent = "Digite seu e-mail acima e toque de novo."; return; }
+  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+  if (error) { av.classList.add("erro"); av.textContent = "Não foi possível enviar: " + error.message; }
+  else av.textContent = "Pronto! Abra o link que enviamos para o seu e-mail neste aparelho e crie sua senha.";
+});
+$("#form-senha").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector("button"), av = $("#senha-aviso");
+  const a = $("#nova-senha").value, b = $("#nova-senha2").value;
+  av.className = "aviso"; av.classList.remove("hide");
+  if (a !== b) { av.classList.add("erro"); av.textContent = "As senhas não são iguais."; return; }
+  if (a.length < 8) { av.classList.add("erro"); av.textContent = "Use pelo menos 8 caracteres."; return; }
+  btn.disabled = true;
+  const { error } = await sb.auth.updateUser({ password: a, data: { senha_definida: true } });
+  btn.disabled = false;
+  if (error) { av.classList.add("erro"); av.textContent = "Não foi possível salvar: " + error.message; return; }
+  acabouDeVirDeLink = false; $("#nova-senha").value = ""; $("#nova-senha2").value = "";
+  av.classList.add("hide");
+  await abrirApp();
+});
+$("#btn-pular-senha").addEventListener("click", async () => { acabouDeVirDeLink = false; await abrirApp(); });
 // Sai só neste aparelho (não derruba o acesso nos outros)
 $("#btn-sair").addEventListener("click", () => sb.auth.signOut({ scope: "local" }));
 // Tema claro/escuro (claro é o padrão; a escolha fica salva neste aparelho)
