@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Orbe Tracking</title>
 <meta name="theme-color" content="#f6f4fb">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Orbe Tracking">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <script>try{if(localStorage.getItem("orbe-tema")==="escuro")document.documentElement.dataset.tema="escuro"}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -47,6 +55,12 @@ h1,h2,.marca{font-family:"Unbounded",sans-serif;letter-spacing:-.01em}
 .login-box{width:100%;max-width:400px;background:var(--login-box);backdrop-filter:blur(14px);box-shadow:var(--sombra);border:1px solid var(--line);border-radius:26px;padding:34px 28px}
 .marca{display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px}
 .estrela{width:26px;height:26px;flex:none}
+.marca img{height:56px;margin-left:-6px;width:auto;display:block}
+.topo .marca img{height:44px;margin-left:-4px}
+.logo-escuro{display:none!important}
+:root[data-tema="escuro"] .logo-claro{display:none!important}
+:root[data-tema="escuro"] .logo-escuro{display:block!important}
+.instalar{margin-top:16px;font-size:13px;color:var(--mut);line-height:1.5;text-align:center}
 .login h1{font-size:26px;margin:26px 0 8px;line-height:1.2}
 .login p{color:var(--mut);margin-bottom:22px;line-height:1.5}
 .campo{width:100%;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--bg2);outline:none;transition:border .15s}
@@ -240,7 +254,7 @@ tfoot tr[style] td{font-weight:400;background:transparent}
 <!-- LOGIN -->
 <section id="tela-login" class="login hide">
   <div class="login-box">
-    <div class="marca"><svg class="estrela"><use href="#estrela"/></svg>Orbe Tracking</div>
+    <span class="marca" role="img" aria-label="Orbe Tracking"><img class="logo-claro" src="/logo/horizontal-claro.png" alt=""><img class="logo-escuro" src="/logo/horizontal-escuro.png" alt=""></span>
     <h1>Seus leads e vendas, num lugar só.</h1>
     <p>Entre com seu e-mail e sua senha.</p>
     <form id="form-login">
@@ -250,13 +264,14 @@ tfoot tr[style] td{font-weight:400;background:transparent}
     </form>
     <button id="btn-link" type="button" class="btn btn-fantasma btn-full" style="margin-top:12px;font-weight:600">Primeiro acesso ou esqueci a senha</button>
     <div id="login-aviso" class="aviso hide"></div>
+    <p id="dica-instalar" class="instalar hide">Para usar como app: toque em <b>Compartilhar</b> e depois em <b>Adicionar à Tela de Início</b>.</p>
   </div>
 </section>
 
 <!-- DEFINIR SENHA -->
 <section id="tela-senha" class="login hide">
   <div class="login-box">
-    <div class="marca"><svg class="estrela"><use href="#estrela"/></svg>Orbe Tracking</div>
+    <span class="marca" role="img" aria-label="Orbe Tracking"><img class="logo-claro" src="/logo/horizontal-claro.png" alt=""><img class="logo-escuro" src="/logo/horizontal-escuro.png" alt=""></span>
     <h1>Crie sua senha</h1>
     <p>Use pelo menos 8 caracteres. Nos próximos acessos você entra só com e-mail e senha.</p>
     <form id="form-senha">
@@ -273,7 +288,7 @@ tfoot tr[style] td{font-weight:400;background:transparent}
 <section id="tela-app" class="hide">
   <header>
     <div class="topo">
-      <div class="marca"><svg class="estrela"><use href="#estrela"/></svg>Orbe Tracking</div>
+      <span class="marca" role="img" aria-label="Orbe Tracking"><img class="logo-claro" src="/logo/horizontal-claro.png" alt=""><img class="logo-escuro" src="/logo/horizontal-escuro.png" alt=""></span>
       <select id="sel-cliente" class="sel" aria-label="Cliente"></select>
       <select id="sel-periodo" class="sel" aria-label="Período">
         <option value="hoje">Hoje</option>
@@ -528,6 +543,12 @@ const tituloLead = (l) => l.nome || (l.canal === "messenger" ? "Contato do Messe
   : l.canal === "instagram" ? (l.ig_username ? "@" + l.ig_username : "Contato do Instagram") : fone(l.wa_id));
 
 // ---------- Auth ----------
+// Web app: registra o service worker e, no iPhone/iPad (Safari), mostra como instalar
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+{
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent), instalado = navigator.standalone || matchMedia("(display-mode: standalone)").matches;
+  if (ios && !instalado) document.addEventListener("DOMContentLoaded", () => $("#dica-instalar")?.classList.remove("hide"));
+}
 async function iniciar() {
   // Link de acesso enviado pela agência (?acesso=...): só vale quando a página roda de verdade,
   // então a prévia de link do WhatsApp não consome o acesso.
