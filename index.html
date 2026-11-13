@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Orbe Tracking</title>
 <meta name="theme-color" content="#f6f4fb">
+<meta name="color-scheme" content="light">
+<style>:root{color-scheme:light}:root[data-tema="escuro"]{color-scheme:dark}</style>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -578,9 +580,19 @@ async function iniciar() {
 let acabouDeVirDeLink = false;
 // Quem ainda não tem senha (ou entrou por link para redefinir) cria uma antes de abrir o painel
 async function entrar(session) {
+  // Sessão guardada no aparelho pode já não existir no servidor: confere e, se for o caso, volta ao login
+  const { error: erroSessao } = await sb.auth.getUser();
+  if (erroSessao) { await sessaoExpirada(); return; }
   const temSenha = session?.user?.user_metadata?.senha_definida === true;
   if (!temSenha || acabouDeVirDeLink) { mostrarSenha(temSenha); return; }
   await abrirApp();
+}
+async function sessaoExpirada() {
+  await sb.auth.signOut({ scope: "local" }).catch(() => {});
+  acabouDeVirDeLink = false;
+  mostrarLogin();
+  const av = $("#login-aviso"); av.className = "aviso erro";
+  av.textContent = "Sua sessão expirou. Entre com e-mail e senha ou toque em \"Primeiro acesso ou esqueci a senha\" para receber um link novo.";
 }
 function mostrarSenha(podePular) {
   $("#tela-login").classList.add("hide"); $("#tela-app").classList.add("hide");
@@ -627,7 +639,12 @@ $("#form-senha").addEventListener("submit", async (e) => {
   btn.disabled = true;
   const { error } = await sb.auth.updateUser({ password: a, data: { senha_definida: true } });
   btn.disabled = false;
-  if (error) { av.classList.add("erro"); av.textContent = "Não foi possível salvar: " + error.message; return; }
+  if (error) {
+    if (/session|jwt|not found/i.test(error.message + " " + (error.code || "")) || error.status === 403 || error.status === 401) { await sessaoExpirada(); return; }
+    av.classList.add("erro");
+    av.textContent = error.code === "same_password" ? "Essa já é a sua senha atual. Escolha uma diferente ou toque em \"Agora não\"." : "Não foi possível salvar: " + error.message;
+    return;
+  }
   acabouDeVirDeLink = false; $("#nova-senha").value = ""; $("#nova-senha2").value = "";
   av.classList.add("hide");
   await abrirApp();
