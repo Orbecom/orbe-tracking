@@ -129,6 +129,23 @@ main{max-width:1180px;margin:0 auto;padding:22px 20px 80px}
 .tag-ig{background:var(--t-ig-bg);color:var(--t-ig)}
 .tag-ms{background:#e7f0ff;color:#0866ff}
 [data-tema="escuro"] .tag-ms{background:#0f2447;color:#7fb0ff}
+.etq{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;border:1px solid var(--line);background:var(--card2);color:var(--texto)}
+button.etq{cursor:pointer;font-family:inherit}
+button.etq:not(.on){background:transparent;color:var(--mut)}
+button.etq.on{background:var(--texto);color:var(--inverso);border-color:var(--texto)}
+.etqs{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.nota-box textarea{width:100%;min-height:78px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--bg2);outline:none;resize:vertical;font:inherit}
+.nota-box .linha-nota{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:8px}
+.nota-box label{font-size:13px;color:var(--mut);display:flex;gap:6px;align-items:center}
+.notas{list-style:none;display:grid;gap:10px;margin-top:14px}
+.notas li{border:1px solid var(--line);border-radius:14px;padding:10px 14px;background:var(--card2)}
+.notas li.interna{border-style:dashed}
+.notas .cab-nota{font-size:12px;color:var(--mut);display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:4px}
+.notas .txt{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
+.perigo{color:var(--verm);border-color:var(--verm)}
+.zona-risco{margin-top:26px;padding-top:16px;border-top:1px solid var(--line);display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.cfg-tag{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.cfg-tag .campo{padding:9px 12px}
 .acoes{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .acoes .sel{padding:8px 10px;font-size:14px}
 .vendido-box{text-align:right}
@@ -332,6 +349,16 @@ tfoot tr[style] td{font-weight:400;background:transparent}
         <button id="btn-etapas" class="btn btn-fantasma btn-p hide" type="button">Etapas do funil</button>
         <button id="btn-novo-lead" class="btn btn-fantasma btn-p" type="button">+ Lead manual</button>
       </div>
+      <div class="linha-filtros">
+        <select id="filtro-origem" class="sel" aria-label="Filtrar por origem">
+          <option value="todas">Origem: todas</option>
+          <option value="anuncio">Origem: anúncio</option>
+          <option value="organico">Origem: orgânico</option>
+          <option value="manual">Origem: manual</option>
+        </select>
+        <select id="filtro-tag" class="sel" aria-label="Filtrar por tag"></select>
+        <button id="btn-tags" class="btn btn-fantasma btn-p hide" type="button">Gerenciar tags</button>
+      </div>
       <div class="lista" id="lista-leads"></div>
       <div class="kanban hide" id="kanban"></div>
     </div>
@@ -467,6 +494,26 @@ tfoot tr[style] td{font-weight:400;background:transparent}
   </div>
 </div>
 
+<!-- MODAL TAGS (agência) -->
+<div id="modal-tags" class="fundo hide">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tags-titulo">
+    <div class="det-topo">
+      <h2 id="tags-titulo">Tags dos leads</h2>
+      <button class="fechar" type="button" data-fechar aria-label="Fechar">×</button>
+    </div>
+    <p>Lista de tags deste cliente. Quem acessa o painel escolhe entre elas em cada lead. Remover uma tag tira ela de todos os leads.</p>
+    <div id="lista-tags-cfg"></div>
+    <div class="cfg-tag">
+      <input id="nova-tag" class="campo" maxlength="24" placeholder="Nova tag (ex.: Visita agendada)">
+      <button type="button" class="btn btn-fantasma btn-p" id="btn-add-tag">Adicionar</button>
+    </div>
+    <div class="linha">
+      <button type="button" class="btn btn-fantasma" data-fechar>Cancelar</button>
+      <button type="button" class="btn btn-roxo" id="btn-salvar-tags">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast hide"></div>
 <div id="tip" class="tip hide" role="tooltip"></div>
 
@@ -500,7 +547,7 @@ const ORDEM_TIPO = { entrada: 0, andamento: 1, venda: 2, perdido: 3, interno: 4 
 
 const estado = {
   clientes: [], cliente: null, papel: "cliente", etapas: [], leads: [], vendas: [],
-  filtro: "todos", busca: "", aba: "leads", visao: "lista", leadVenda: null, etapaVenda: null, canal: null, detalhe: null,
+  filtro: "todos", filtroOrigem: "todas", filtroTag: "todas", uid: null, tagsCfg: [], busca: "", aba: "leads", visao: "lista", leadVenda: null, etapaVenda: null, canal: null, detalhe: null,
 };
 
 function toast(msg, ms = 3200) {
@@ -669,15 +716,17 @@ $("#btn-tema").addEventListener("click", () => {
 async function abrirApp() {
   $("#tela-login").classList.add("hide"); $("#tela-app").classList.remove("hide");
   const [{ data: clientes }, { data: papel }] = await Promise.all([
-    sb.from("clientes").select("id, nome, ad_account_id, wa_conectado, metricas_sincronizadas_em, metricas_erro").order("nome"),
+    sb.from("clientes").select("id, nome, ad_account_id, wa_conectado, metricas_sincronizadas_em, metricas_erro, tags").order("nome"),
     sb.rpc("meu_papel"),
   ]);
   estado.clientes = clientes || []; estado.papel = papel || "cliente";
+  estado.uid = (await sb.auth.getSession()).data.session?.user?.id || null;
   const sel = $("#sel-cliente");
   sel.innerHTML = estado.clientes.map((c) => `<option value="${c.id}">${esc(c.nome)}</option>`).join("");
   sel.classList.toggle("hide", estado.clientes.length < 2);
   $("#btn-sync").classList.toggle("hide", estado.papel !== "agencia");
   $("#btn-etapas").classList.toggle("hide", estado.papel !== "agencia");
+  $("#btn-tags").classList.toggle("hide", estado.papel !== "agencia");
   if (!estado.clientes.length) {
     $("#lista-leads").innerHTML = `<div class="vazio">Seu acesso ainda não foi liberado.<br>Fale com a Orbe Media para vincular sua conta.</div>`;
     $("#kpis-leads").innerHTML = ""; return;
@@ -692,7 +741,8 @@ async function abrirApp() {
 }
 
 $("#sel-cliente").addEventListener("change", async (e) => {
-  estado.cliente = e.target.value; estado.filtro = "todos";
+  estado.cliente = e.target.value; estado.filtro = "todos"; estado.filtroOrigem = "todas"; estado.filtroTag = "todas";
+  $("#filtro-origem").value = "todas";
   gravar("orbe_cliente", estado.cliente);
   ouvirTempoReal(); await carregarEtapas(); recarregar();
 });
@@ -755,7 +805,7 @@ async function carregarLeads(silencioso) {
   const { ini, fim } = periodo();
   if (!silencioso) $("#lista-leads").innerHTML = `<div class="vazio">Carregando…</div>`;
   const { data, error } = await sb.from("leads")
-    .select("id, canal, wa_id, ig_username, fb_psid, nome, origem, anuncio_titulo, status, etapa_id, valor_venda, vendido_em, compras, capi_enviado_em, capi_erro, ctwa_clid, criado_em, ultima_mensagem_em")
+    .select("id, canal, wa_id, ig_username, fb_psid, nome, origem, tags, anuncio_titulo, status, etapa_id, valor_venda, vendido_em, compras, capi_enviado_em, capi_erro, ctwa_clid, criado_em, ultima_mensagem_em")
     .eq("cliente_id", estado.cliente)
     .gte("ultima_mensagem_em", ini + "T00:00:00-03:00")
     .lte("ultima_mensagem_em", fim + "T23:59:59.999-03:00")
@@ -784,9 +834,28 @@ function desenharKpisLeads() {
     <div class="kpi destaque"><div class="rot">Faturamento</div><div class="val">${brl(fat)}</div><div class="sub">${vend.length ? "ticket médio " + brl(fat / vend.length) : "no período"}</div></div>`;
 }
 
+const tagsDoCliente = () => estado.clientes.find((c) => c.id === estado.cliente)?.tags || [];
+function passaFiltros(l) {
+  if (estado.filtroOrigem !== "todas" && l.origem !== estado.filtroOrigem) return false;
+  const t = l.tags || [];
+  if (estado.filtroTag === "__sem") return t.length === 0;
+  if (estado.filtroTag !== "todas") return t.includes(estado.filtroTag);
+  return true;
+}
+function desenharFiltroTag() {
+  const tags = tagsDoCliente();
+  if (estado.filtroTag !== "todas" && estado.filtroTag !== "__sem" && !tags.includes(estado.filtroTag)) estado.filtroTag = "todas";
+  $("#filtro-tag").innerHTML = `<option value="todas">Tag: todas</option><option value="__sem">Sem tag</option>` +
+    tags.map((t) => `<option value="${esc(t)}">Tag: ${esc(t)}</option>`).join("");
+  $("#filtro-tag").value = estado.filtroTag;
+}
+const etiquetas = (l) => (l.tags || []).map((t) => `<span class="etq">${esc(t)}</span>`).join(" ");
+
 function desenharChips() {
-  const cont = (id) => estado.leads.filter((l) => etapaDoLead(l)?.id === id).length;
-  const todos = estado.leads.filter((l) => etapaDoLead(l)?.tipo !== "interno").length;
+  desenharFiltroTag();
+  const base = estado.leads.filter(passaFiltros);
+  const cont = (id) => base.filter((l) => etapaDoLead(l)?.id === id).length;
+  const todos = base.filter((l) => etapaDoLead(l)?.tipo !== "interno").length;
   $("#filtro-etapa").innerHTML = `<button class="chip ${estado.filtro === "todos" ? "ativo" : ""}" data-e="todos">Todos<span class="qtd">${todos}</span></button>` +
     estado.etapas.map((e) => `<button class="chip ${estado.filtro === e.id ? "ativo" : ""}" data-e="${e.id}">${esc(e.nome)}<span class="qtd">${cont(e.id)}</span></button>`).join("");
 }
@@ -794,6 +863,7 @@ function desenharChips() {
 function leadsFiltrados() {
   const b = estado.busca.toLowerCase(), digitos = b.replace(/\D/g, "");
   return estado.leads.filter((l) => {
+    if (!passaFiltros(l)) return false;
     const e = etapaDoLead(l);
     if (estado.filtro === "todos" ? e?.tipo === "interno" : e?.id !== estado.filtro) return false;
     if (!b) return true;
@@ -846,7 +916,7 @@ function desenharLeads() {
     const voltou = l.ultima_mensagem_em && (new Date(l.ultima_mensagem_em) - new Date(l.criado_em)) > 86400000;
     return `<div class="lead">
       <div>
-        <div class="lead-nome"><button class="abrir" data-abrir="${l.id}">${esc(tituloLead(l))}</button> ${tagCanal(l)} ${tagOrigem(l)} ${tagCompras(l)}</div>
+        <div class="lead-nome"><button class="abrir" data-abrir="${l.id}">${esc(tituloLead(l))}</button> ${tagCanal(l)} ${tagOrigem(l)} ${tagCompras(l)} ${etiquetas(l)}</div>
         <div class="lead-meta">
           ${contatoLead(l)}
           <span>${tempoRel(l.ultima_mensagem_em || l.criado_em)}</span>
@@ -869,7 +939,7 @@ function desenharKanban(lista) {
       <div class="coluna-tit">${esc(e.nome)}<span>${cards.length}</span></div>
       ${cards.map((l) => `<button class="cartao" draggable="true" data-abrir="${l.id}" data-arrastar="${l.id}">
         <b>${esc(tituloLead(l))}</b>
-        <div class="tags">${tagCanal(l)} ${tagOrigem(l)}</div>
+        <div class="tags">${tagCanal(l)} ${tagOrigem(l)} ${etiquetas(l)}</div>
         <div class="meta">${tempoRel(l.ultima_mensagem_em || l.criado_em)}${l.anuncio_titulo ? " · " + esc(l.anuncio_titulo) : ""}</div>
         ${l.status === "vendido" ? `<div class="valor">${brl(l.valor_venda)}</div>` : ""}
       </button>`).join("")}
@@ -915,6 +985,8 @@ $("#filtro-etapa").addEventListener("click", (e) => {
   const b = e.target.closest(".chip"); if (!b) return;
   estado.filtro = b.dataset.e; desenharChips(); desenharLeads();
 });
+$("#filtro-origem").addEventListener("change", (e) => { estado.filtroOrigem = e.target.value; desenharChips(); desenharLeads(); });
+$("#filtro-tag").addEventListener("change", (e) => { estado.filtroTag = e.target.value; desenharChips(); desenharLeads(); });
 $("#busca").addEventListener("input", (e) => { estado.busca = e.target.value.trim(); desenharLeads(); });
 function definirVisao(v) {
   estado.visao = v === "colunas" ? "colunas" : "lista"; gravar("orbe_visao_leads", estado.visao);
@@ -980,17 +1052,34 @@ $("#form-venda").addEventListener("submit", async (e) => {
 async function abrirDetalhe(id) {
   const l = estado.leads.find((x) => x.id === id) || (estado.detalhe?.lead.id === id ? estado.detalhe.lead : null);
   if (!l) return;
-  estado.detalhe = { lead: l };
+  estado.detalhe = { lead: l, notas: null };
   $("#modal-detalhe").classList.remove("hide");
   desenharDetalhe(l, null, null);
-  const [{ data: hist }, { data: evs }] = await Promise.all([
+  const [{ data: hist }, { data: evs }, { data: notas }] = await Promise.all([
     sb.from("etapa_historico").select("id, de_etapa, para_etapa, origem, criado_em").eq("lead_id", id).order("criado_em", { ascending: false }).limit(50),
     sb.from("eventos_disparados").select("evento, status, detalhe, valor, criado_em, atualizado_em").eq("lead_id", id).order("criado_em", { ascending: false }),
+    sb.from("lead_notas").select("id, texto, interna, autor_id, autor_rotulo, autor_papel, criado_em").eq("lead_id", id).order("criado_em", { ascending: false }),
   ]);
-  if (estado.detalhe?.lead.id === id) desenharDetalhe(l, hist || [], evs || []);
+  if (estado.detalhe?.lead.id === id) { estado.detalhe.notas = notas || []; desenharDetalhe(l, hist || [], evs || []); }
+}
+
+function htmlTagsDetalhe(l) {
+  const tags = tagsDoCliente(), mias = l.tags || [];
+  if (!tags.length) return `<p class="nota" style="margin-top:0">Nenhuma tag criada para este cliente.${estado.papel === "agencia" ? ' Use "Gerenciar tags" na lista de leads.' : ""}</p>`;
+  return `<div class="etqs">${tags.map((t) => `<button type="button" class="etq ${mias.includes(t) ? "on" : ""}" data-tag-lead="${esc(t)}" aria-pressed="${mias.includes(t)}">${esc(t)}</button>`).join("")}</div>`;
+}
+function htmlNotas() {
+  const notas = estado.detalhe?.notas;
+  if (notas === null || notas === undefined) return `<p class="nota">Carregando…</p>`;
+  if (!notas.length) return `<p class="nota">Nenhuma observação ainda.</p>`;
+  return `<ul class="notas">${notas.map((n) => `<li class="${n.interna ? "interna" : ""}">
+      <div class="cab-nota"><b>${esc(n.autor_rotulo)}</b><span>${dataHora(n.criado_em)}</span>${n.interna ? `<span class="tag tag-manual">interna</span>` : ""}
+        ${(n.autor_id === estado.uid || estado.papel === "agencia") ? `<button class="link" data-apagar-nota="${n.id}" style="margin-left:auto">apagar</button>` : ""}</div>
+      <div class="txt">${esc(n.texto)}</div></li>`).join("")}</ul>`;
 }
 
 function desenharDetalhe(l, hist, evs) {
+  const rascunho = $("#det-nota-texto")?.value || "", internaMarcada = $("#det-nota-interna")?.checked || false;
   const e = etapaDoLead(l);
   const atribuivel = l.origem !== "manual" && ((l.canal === "whatsapp" && l.ctwa_clid) || l.canal === "instagram" || l.canal === "messenger");
   const origemTxt = (l.origem === "anuncio" ? "Anúncio" + (l.anuncio_titulo ? `: ${esc(l.anuncio_titulo)}` : "")
@@ -1016,6 +1105,17 @@ function desenharDetalhe(l, hist, evs) {
       <label class="nota" style="margin:0" for="det-etapa">Mover para</label>
       ${seletorEtapa(l, "data-det-etapa").replace("<select ", '<select id="det-etapa" ')}
     </div>
+    <div class="det-sec">Tags</div>
+    ${htmlTagsDetalhe(l)}
+    <div class="det-sec">Observações</div>
+    <div class="nota-box">
+      <textarea id="det-nota-texto" maxlength="2000" placeholder="Escreva uma observação sobre este lead…" aria-label="Nova observação">${esc(rascunho)}</textarea>
+      <div class="linha-nota">
+        ${estado.papel === "agencia" ? `<label><input type="checkbox" id="det-nota-interna" ${internaMarcada ? "checked" : ""}> Nota interna (só a agência vê)</label>` : "<span></span>"}
+        <button class="btn btn-roxo btn-p" type="button" id="det-nota-add">Adicionar observação</button>
+      </div>
+    </div>
+    <div id="det-notas-lista">${htmlNotas()}</div>
     <div class="det-sec">Histórico de etapas</div>
     ${hist === null ? `<p class="nota">Carregando…</p>` : hist.length ? `<ul class="linha-tempo">${hist.map((h) => `<li>
         <time>${dataHora(h.criado_em)}</time>
@@ -1029,8 +1129,58 @@ function desenharDetalhe(l, hist, evs) {
       </li>`).join("")}</ul>`
       : `<p class="nota">${atribuivel ? "Nenhum evento enviado ainda. Os eventos saem quando o lead chega numa etapa que tem eventos marcados."
         : l.origem === "manual" ? "Lead cadastrado à mão: não há anúncio para a Meta associar, então nenhum evento é enviado."
-        : "Este contato não veio de anúncio: a Meta não tem como associá-lo a uma campanha, então nenhum evento é enviado."}</p>`}`;
+        : "Este contato não veio de anúncio: a Meta não tem como associá-lo a uma campanha, então nenhum evento é enviado."}</p>`}
+    ${estado.papel === "agencia" ? `<div class="zona-risco"><span class="nota" style="margin:0">Excluir apaga o lead, as vendas, o histórico e as observações dele.</span>
+      <button class="btn btn-fantasma btn-p perigo" type="button" data-excluir-lead="${l.id}">Excluir lead</button></div>` : ""}`;
 }
+$("#detalhe").addEventListener("click", async (e) => {
+  const l = estado.detalhe?.lead; if (!l) return;
+  const tg = e.target.closest("[data-tag-lead]");
+  if (tg) {
+    const t = tg.dataset.tagLead, atuais = l.tags || [];
+    const novas = atuais.includes(t) ? atuais.filter((x) => x !== t) : [...atuais, t];
+    tg.disabled = true;
+    const { data, error } = await sb.rpc("definir_tags_lead", { p_lead: l.id, p_tags: novas });
+    if (error) { toast("Não foi possível salvar a tag: " + error.message, 5000); tg.disabled = false; return; }
+    l.tags = data || [];
+    const na = estado.leads.find((x) => x.id === l.id); if (na) na.tags = l.tags;
+    desenharChips(); desenharLeads();
+    document.querySelectorAll("[data-tag-lead]").forEach((b) => { const on = l.tags.includes(b.dataset.tagLead); b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); b.disabled = false; });
+    return;
+  }
+  if (e.target.closest("#det-nota-add")) {
+    const ta = $("#det-nota-texto"), texto = ta.value.trim(); if (!texto) { toast("Escreva a observação"); return; }
+    const btn = e.target.closest("#det-nota-add"); btn.disabled = true;
+    const { data, error } = await sb.rpc("adicionar_nota", { p_lead: l.id, p_texto: texto, p_interna: !!$("#det-nota-interna")?.checked });
+    btn.disabled = false;
+    if (error) { toast("Não foi possível salvar: " + error.message, 5000); return; }
+    estado.detalhe.notas = [data, ...(estado.detalhe.notas || [])];
+    ta.value = ""; $("#det-notas-lista").innerHTML = htmlNotas(); toast("Observação salva");
+    return;
+  }
+  const ap = e.target.closest("[data-apagar-nota]");
+  if (ap) {
+    if (!confirm("Apagar esta observação?")) return;
+    const { error } = await sb.rpc("excluir_nota", { p_nota: ap.dataset.apagarNota });
+    if (error) { toast("Não foi possível apagar: " + error.message, 5000); return; }
+    estado.detalhe.notas = (estado.detalhe.notas || []).filter((n) => n.id !== ap.dataset.apagarNota);
+    $("#det-notas-lista").innerHTML = htmlNotas();
+    return;
+  }
+  if (e.target.closest("[data-excluir-lead]")) {
+    const vendido = l.status === "vendido" || Number(l.compras || 0) > 0;
+    const aviso = `Excluir ${tituloLead(l)} de vez?\n\n` +
+      (vendido ? `Este lead tem venda registrada${l.valor_venda ? " (" + brl(l.valor_venda) + ")" : ""}. A venda será apagada junto e o faturamento do painel diminui.\n\n` : "") +
+      `• Histórico, observações e eventos do lead também são apagados.\n• Eventos já enviados à Meta não são removidos lá.\n• Se esse contato chamar de novo, entra como lead novo.\n\nNão dá para desfazer.`;
+    if (!confirm(aviso)) return;
+    const btn = e.target.closest("[data-excluir-lead]"); btn.disabled = true;
+    const { data, error } = await sb.rpc("excluir_lead", { p_lead: l.id });
+    if (error) { btn.disabled = false; toast("Não foi possível excluir: " + error.message, 6000); return; }
+    $("#modal-detalhe").classList.add("hide"); estado.detalhe = null;
+    toast(data?.vendas ? `Lead excluído (e ${data.vendas} venda${data.vendas > 1 ? "s" : ""})` : "Lead excluído");
+    carregarLeads(true);
+  }
+});
 $("#detalhe").addEventListener("change", (e) => {
   if (!e.target.matches("[data-det-etapa]")) return;
   const l = estado.detalhe?.lead; if (!l) return;
@@ -1038,6 +1188,43 @@ $("#detalhe").addEventListener("change", (e) => {
     const novo = estado.leads.find((x) => x.id === l.id);
     if (novo) { estado.detalhe.lead = novo; abrirDetalhe(l.id); } else e.target.value = etapaDoLead(l)?.id;
   });
+});
+
+// ---------- Tags do cliente (agência) ----------
+function desenharTagsCfg() {
+  $("#lista-tags-cfg").innerHTML = estado.tagsCfg.length ? estado.tagsCfg.map((t, i) => `<div class="cfg-tag">
+      <span class="etq" style="flex:1;padding:9px 12px;font-size:14px">${esc(t)}</span>
+      <button class="icone" type="button" data-rem-tag="${i}" aria-label="Remover ${esc(t)}">✕</button></div>`).join("")
+    : `<p class="nota" style="margin-top:0">Nenhuma tag. Adicione abaixo.</p>`;
+}
+$("#btn-tags").addEventListener("click", () => {
+  estado.tagsCfg = [...tagsDoCliente()]; desenharTagsCfg(); $("#nova-tag").value = "";
+  $("#modal-tags").classList.remove("hide");
+});
+function adicionarTagCfg() {
+  const t = $("#nova-tag").value.replace(/\s+/g, " ").trim().slice(0, 24); if (!t) return;
+  if (estado.tagsCfg.some((x) => x.toLowerCase() === t.toLowerCase())) { toast("Essa tag já existe"); return; }
+  if (estado.tagsCfg.length >= 12) { toast("No máximo 12 tags"); return; }
+  estado.tagsCfg.push(t); $("#nova-tag").value = ""; desenharTagsCfg();
+}
+$("#btn-add-tag").addEventListener("click", adicionarTagCfg);
+$("#nova-tag").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); adicionarTagCfg(); } });
+$("#lista-tags-cfg").addEventListener("click", (e) => {
+  const r = e.target.closest("[data-rem-tag]"); if (!r) return;
+  const t = estado.tagsCfg[Number(r.dataset.remTag)];
+  const emUso = estado.leads.filter((l) => (l.tags || []).includes(t)).length;
+  if (emUso && !confirm(`A tag "${t}" está em ${emUso} lead${emUso > 1 ? "s" : ""}. Remover tira ela deles. Continuar?`)) return;
+  estado.tagsCfg.splice(Number(r.dataset.remTag), 1); desenharTagsCfg();
+});
+$("#btn-salvar-tags").addEventListener("click", async (e) => {
+  if ($("#nova-tag").value.trim()) adicionarTagCfg();
+  const btn = e.target; btn.disabled = true;
+  const { data, error } = await sb.rpc("definir_tags_cliente", { p_cliente: estado.cliente, p_tags: estado.tagsCfg });
+  btn.disabled = false;
+  if (error) { toast("Não foi possível salvar: " + error.message, 5000); return; }
+  const c = estado.clientes.find((x) => x.id === estado.cliente); if (c) c.tags = data || [];
+  $("#modal-tags").classList.add("hide"); toast("Tags salvas");
+  await carregarLeads(true);
 });
 
 // ---------- Lead manual ----------
@@ -1412,7 +1599,7 @@ $("#btn-sync").addEventListener("click", async (e) => {
   if (error || !r?.ok) { toast(r?.erro || error?.message || "Erro ao atualizar"); return; }
   const erros = (r.clientes || []).filter((x) => x.erro);
   toast(erros.length ? `Erro em ${erros[0].cliente}: ${erros[0].erro}` : "Métricas atualizadas ✓", erros.length ? 6000 : 3200);
-  const { data } = await sb.from("clientes").select("id, nome, ad_account_id, wa_conectado, metricas_sincronizadas_em, metricas_erro").order("nome");
+  const { data } = await sb.from("clientes").select("id, nome, ad_account_id, wa_conectado, metricas_sincronizadas_em, metricas_erro, tags").order("nome");
   estado.clientes = data || estado.clientes;
   carregarPainel();
 });
