@@ -212,6 +212,24 @@ tfoot td{font-weight:700;background:var(--bg2)}
 .fundo{position:fixed;inset:0;background:rgba(5,2,10,.7);backdrop-filter:blur(4px);display:grid;place-items:center;z-index:50;padding:20px;overflow:auto}
 .modal{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:26px;width:100%;max-width:380px}
 .modal.largo{max-width:620px}
+.modal.conex{max-width:520px}
+.sino{position:relative;padding:9px 12px}
+.sino .pt{position:absolute;top:5px;right:6px;width:10px;height:10px;border-radius:50%;background:#e5484d;border:2px solid var(--card)}
+.nv{border-top:1px solid var(--line);padding:14px 0}
+.nv:first-of-type{border-top:0}
+.nv b{display:block;font-size:15px}
+.nv small{color:var(--mut);font-size:12px}
+.nv p{margin:4px 0 0;font-size:13px}
+.nv .novo{font-size:11px;font-weight:700;background:var(--lima);color:#120a1f;border-radius:99px;padding:2px 8px;margin-left:6px}
+.cx{display:flex;gap:14px;align-items:flex-start;border:1px solid var(--line);border-radius:18px;padding:14px;margin-top:12px}
+.cx .ic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;background:var(--lima);color:#120a1f}
+.cx .tx{flex:1;min-width:0}
+.cx b{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:15px}
+.cx .sel-st{font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:var(--line);color:var(--mut)}
+.cx .sel-st.ok{background:#d7f7c2;color:#1d5a0b}
+.cx p{margin:4px 0 8px;font-size:13px}
+.cx .libera{font-size:12px;color:var(--mut);margin-bottom:10px}
+.cx .libera i{font-style:normal;font-weight:700;color:var(--texto)}
 .modal h2{font-size:18px;margin-bottom:6px}
 .modal p{color:var(--mut);font-size:14px;margin-bottom:16px}
 .modal .linha{display:flex;gap:10px;margin-top:14px}
@@ -317,6 +335,8 @@ tfoot tr[style] td{font-weight:400;background:transparent}
         <option value="mes">Este mês</option>
         <option value="mes_ant">Mês passado</option>
       </select>
+      <button id="btn-novidades" class="btn btn-fantasma sino" type="button" aria-label="Novidades do aplicativo" title="Novidades">🔔<span class="pt hide" id="pt-novidades"></span></button>
+      <button id="btn-conexoes" class="btn btn-fantasma btn-p" type="button">Conexões</button>
       <button id="btn-tema" class="btn btn-fantasma btn-tema" aria-label="Alternar tema claro/escuro" title="Alternar tema">☾</button>
       <button id="btn-sair" class="btn btn-fantasma" style="padding:9px 12px">Sair</button>
     </div>
@@ -491,6 +511,60 @@ tfoot tr[style] td{font-weight:400;background:transparent}
     <div class="linha">
       <button type="button" class="btn btn-fantasma" id="btn-nova-etapa">+ Nova etapa intermediária</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL NOVIDADES -->
+<div id="modal-novidades" class="fundo hide">
+  <div class="modal conex" role="dialog" aria-modal="true" aria-labelledby="nv-titulo">
+    <div class="det-topo">
+      <h2 id="nv-titulo">Novidades</h2>
+      <button class="fechar" type="button" data-fechar aria-label="Fechar">×</button>
+    </div>
+    <p>O que mudou no Orbe Tracking.</p>
+    <div id="lista-novidades"></div>
+  </div>
+</div>
+
+<!-- MODAL CONEXÕES -->
+<div id="modal-conexoes" class="fundo hide">
+  <div class="modal conex" role="dialog" aria-modal="true" aria-labelledby="cx-titulo">
+    <div class="det-topo">
+      <h2 id="cx-titulo">Conexões</h2>
+      <button class="fechar" type="button" data-fechar aria-label="Fechar">×</button>
+    </div>
+    <p>Conecte os canais da empresa para os contatos dos anúncios aparecerem aqui sozinhos. Você não precisa sair desta tela para entender o que cada um faz.</p>
+
+    <div class="cx" id="cx-wa">
+      <div class="ic" aria-hidden="true">💬</div>
+      <div class="tx">
+        <b>WhatsApp <span class="sel-st" id="cx-wa-st">Não conectado</span></b>
+        <p>Liga o WhatsApp Business da empresa ao painel. Leva uns 5 minutos, com o celular da empresa em mãos.</p>
+        <div class="libera"><i>Libera:</i> leads que chamam no WhatsApp (com o anúncio de origem), marcar venda e enviar a compra para a Meta.</div>
+        <button type="button" class="btn btn-lima btn-p" id="cx-btn-wa">Conectar WhatsApp</button>
+      </div>
+    </div>
+
+    <div class="cx">
+      <div class="ic" aria-hidden="true">✉️</div>
+      <div class="tx">
+        <b>Messenger (Facebook) <span class="sel-st">Em breve</span></b>
+        <p>Você entra com o Facebook e escolhe a Página da empresa.</p>
+        <div class="libera"><i>Libera:</i> leads que chamam no Messenger da Página, com o anúncio de origem.</div>
+        <button type="button" class="btn btn-fantasma btn-p" disabled>Disponível em breve</button>
+      </div>
+    </div>
+
+    <div class="cx">
+      <div class="ic" aria-hidden="true">📷</div>
+      <div class="tx">
+        <b>Instagram Direct <span class="sel-st">Em breve</span></b>
+        <p>Você entra com o Instagram da empresa e autoriza a leitura das mensagens.</p>
+        <div class="libera"><i>Libera:</i> leads que chamam no Direct, com nome, @ e o anúncio de origem.</div>
+        <button type="button" class="btn btn-fantasma btn-p" disabled>Disponível em breve</button>
+      </div>
+    </div>
+    <p class="nota" style="margin:14px 0 0">Messenger e Instagram dependem de uma aprovação da Meta e ainda não estão liberados. Se precisar conectar agora, fale com a Orbe.</p>
   </div>
 </div>
 
@@ -765,16 +839,49 @@ function atualizarAvisoWa() {
   const c = estado.clientes.find((x) => x.id === estado.cliente);
   $("#aviso-wa").classList.toggle("hide", !c || !!c.wa_conectado);
 }
-$("#btn-conectar-wa").addEventListener("click", async (e) => {
-  const b = e.currentTarget; b.disabled = true; b.textContent = "Abrindo…";
+async function conectarWa(b, rotulo) {
+  b.disabled = true; b.textContent = "Abrindo…";
   const { data, error } = await sb.rpc("gerar_meu_link_whatsapp", { p_cliente: estado.cliente });
   if (error || !data) {
-    b.disabled = false; b.textContent = "Conectar WhatsApp";
+    b.disabled = false; b.textContent = rotulo;
     toast("Não foi possível abrir a conexão: " + (error?.message || "tente de novo"), 6000);
     return;
   }
   location.href = data;
+}
+$("#btn-conectar-wa").addEventListener("click", (e) => conectarWa(e.currentTarget, "Conectar WhatsApp"));
+$("#cx-btn-wa").addEventListener("click", (e) => conectarWa(e.currentTarget, "Conectar WhatsApp"));
+$("#btn-conexoes").addEventListener("click", () => {
+  const c = estado.clientes.find((x) => x.id === estado.cliente);
+  const ok = !!(c && c.wa_conectado);
+  const st = $("#cx-wa-st"); st.textContent = ok ? "Conectado" : "Não conectado"; st.classList.toggle("ok", ok);
+  const b = $("#cx-btn-wa"); b.disabled = ok; b.textContent = ok ? "WhatsApp conectado" : "Conectar WhatsApp";
+  b.classList.toggle("btn-lima", !ok); b.classList.toggle("btn-fantasma", ok);
+  $("#modal-conexoes").classList.remove("hide");
 });
+
+// ---------- Novidades (sino no topo) ----------
+// Para avisar uma atualização: acrescente um item NO TOPO desta lista (id único, data, título e texto curto).
+const NOVIDADES = [
+  { id: "2026-11-23-conexoes", data: "23/11/2026", titulo: "Botão Conexões", texto: "Agora há um botão \"Conexões\" no topo. Ele abre uma janela com o WhatsApp, o Messenger e o Instagram: o que cada um faz, o que libera e como conectar. Messenger e Instagram chegam em breve." },
+  { id: "2026-11-13-leads", data: "13/11/2026", titulo: "Observações, tags e filtros nos leads", texto: "Dá para escrever observações em cada lead, marcar tags (Indicação, Recompra, Outro) e filtrar a lista por origem (anúncio, orgânico, manual) e por tag. A agência também pode excluir um lead." },
+  { id: "2026-11-12-app", data: "12/11/2026", titulo: "Login por senha e app no celular", texto: "O acesso agora é por e-mail e senha, sem precisar de link toda vez. O painel também pode ser instalado na tela inicial do celular, como um aplicativo." },
+];
+function novidadeVista() { try { return localStorage.getItem("orbe_novidade_vista") || ""; } catch (e) { return ""; } }
+function atualizarSinoNovidades() {
+  $("#pt-novidades").classList.toggle("hide", novidadeVista() === NOVIDADES[0].id);
+}
+$("#btn-novidades").addEventListener("click", () => {
+  const vista = novidadeVista();
+  const idx = NOVIDADES.findIndex((n) => n.id === vista);
+  const novas = idx === -1 ? NOVIDADES.length : idx;
+  $("#lista-novidades").innerHTML = NOVIDADES.map((n, i) =>
+    `<div class="nv"><b>${esc(n.titulo)}${i < novas ? '<span class="novo">novo</span>' : ""}</b><small>${esc(n.data)}</small><p>${esc(n.texto)}</p></div>`).join("");
+  $("#modal-novidades").classList.remove("hide");
+  try { localStorage.setItem("orbe_novidade_vista", NOVIDADES[0].id); } catch (e) {}
+  atualizarSinoNovidades();
+});
+atualizarSinoNovidades();
 
 function ouvirTempoReal() {
   if (estado.canal) sb.removeChannel(estado.canal);
