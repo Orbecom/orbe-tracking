@@ -868,7 +868,8 @@ function desenharConexoes() {
   $("#cx-verificar").classList.toggle("hide", !bm);
   const copiar = `<button type="button" class="btn btn-fantasma btn-p" data-copiar="${ORBE_BM}">Copiar ID da Orbe</button>`;
   const abrir = (pag, txt) => `<a class="btn btn-fantasma btn-p" href="${linkBM(pag, bm)}" target="_blank" rel="noopener">${txt}</a>`;
-  const compartilhar = (tipo) => `<ol><li>Clique em <b>${abrir("partners", "Abrir Parceiros")}</b> e escolha <b>Orbe Company</b>.</li><li>Clique em <b>Compartilhar ativos</b>, escolha ${tipo} e marque <b>Controle total</b>.</li></ol>`;
+  const compartilhar = (pag, rotulo, item) => `<ol><li>Abra <b>${rotulo}</b> e clique ${item}.</li><li>Na aba <b>Parceiros</b>, clique em <b>Atribuir parceiro</b> → <b>ID do portfólio empresarial</b>.</li><li>Cole o ID da Orbe (<b>${ORBE_BM}</b>) e marque <b>Controle total</b>.</li></ol>
+    <div class="acoes-cx">${abrir(pag, "Abrir " + rotulo)}${copiar}</div>`;
   const passos = [];
   passos.push(passoCx(1, st.bm, "Informe seu portfólio empresarial",
     bm ? `ID informado: <b>${esc(bm)}</b>${o.bm?.nome ? " (" + esc(o.bm.nome) + ")" : ""}.` : "É o número da sua empresa no Gerenciador de Negócios da Meta. Abra a página, copie o número em <b>Identificação do portfólio empresarial</b> e cole aqui.",
@@ -880,16 +881,16 @@ function desenharConexoes() {
      <div class="acoes-cx">${copiar}${abrir("partners", "Abrir Parceiros")}</div>`));
   passos.push(passoCx(3, st.pagina, "Página do Facebook",
     "Para os anúncios saírem em nome da sua Página.",
-    lista((o.paginas || []).map((p) => p.nome), "Encontrada") + (st.pagina || propria ? "" : compartilhar("<b>Páginas</b> e marque a Página da empresa"))));
+    lista((o.paginas || []).map((p) => p.nome), "Encontrada") + (st.pagina || propria ? "" : compartilhar("pages", "Páginas", "na Página da empresa"))));
   passos.push(passoCx(4, st.insta, "Instagram",
     "Para os anúncios aparecerem com o seu @. O Instagram precisa estar ligado à Página do Facebook.",
-    lista((o.instagram || []).map((p) => "@" + p.usuario), "Encontrado") + (st.insta || propria ? "" : compartilhar("<b>Contas do Instagram</b>") + `<div class="acoes-cx">${abrir("instagram_account", "Ver contas do Instagram")}</div>`), true));
+    lista((o.instagram || []).map((p) => "@" + p.usuario), "Encontrado") + (st.insta || propria ? "" : compartilhar("instagram_account", "Contas do Instagram", "na conta da empresa")), true));
   passos.push(passoCx(5, st.conta, "Conta de anúncios",
     "Onde as campanhas rodam e de onde vêm os números do painel.",
-    lista((o.contas || []).map((p) => p.nome + (p.ativa ? "" : " (desativada)")), "Encontrada") + (st.conta || propria ? "" : compartilhar("<b>Contas de anúncios</b>"))));
+    lista((o.contas || []).map((p) => p.nome + (p.ativa ? "" : " (desativada)")), "Encontrada") + (st.conta || propria ? "" : compartilhar("ad_accounts", "Contas de anúncios", "na conta que vai rodar os anúncios"))));
   passos.push(passoCx(6, st.pixel, "Pixel (conjunto de dados)",
     "Para a Meta saber quais anúncios trazem vendas.",
-    lista((o.pixels || []).map((p) => p.nome), "Encontrado") + (st.pixel || propria ? "" : compartilhar("<b>Conjuntos de dados e pixels</b>") + `<p class="achados">Não tem pixel? Tudo bem, a Orbe cria um para você. Avise no WhatsApp.</p>`)));
+    lista((o.pixels || []).map((p) => p.nome), "Encontrado") + (st.pixel || propria ? "" : compartilhar("events_dataset_and_pixel", "Conjuntos de dados e pixels", "no pixel da empresa") + `<p class="achados">Não tem pixel? Tudo bem, a Orbe cria um para você. Avise no WhatsApp.</p>`)));
   passos.push(passoCx(7, st.wa, "WhatsApp",
     "Liga o WhatsApp Business ao painel: os contatos dos anúncios aparecem aqui sozinhos. Leva uns 5 minutos, com o celular da empresa em mãos.",
     st.wa ? "" : `<div class="acoes-cx"><button type="button" class="btn btn-lima btn-p" id="cx-btn-wa">Conectar WhatsApp</button></div>`));
