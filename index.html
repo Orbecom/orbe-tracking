@@ -960,7 +960,8 @@ async function conectarFacebook(b) {
     b.disabled = false;
     if (error || !data?.ok) { $("#cx-fb").innerHTML = ""; return toast(data?.erro || "Não foi possível listar as Páginas.", 6000); }
     estado.fbSessao = data.sessao;
-    $("#cx-fb").innerHTML = data.paginas.length
+    estado.fbResultado = null;
+    estado.fbLista = $("#cx-fb").innerHTML = data.paginas.length
       ? `<p class="achados">Escolha a Página da empresa:</p><div class="fb-paginas">${data.paginas.map((p) =>
           `<button type="button" class="fb-pg" data-pg="${esc(p.id)}">${p.foto ? `<img src="${esc(p.foto)}" alt="">` : ""}<span><b>${esc(p.nome)}</b>${p.instagram ? `<small>Instagram: @${esc(p.instagram)}</small>` : ""}<small>ID ${esc(p.id)}</small></span></button>`).join("")}</div>`
       : `<p class="nota">Nenhuma Página encontrada nesse perfil.</p>`;
@@ -972,7 +973,7 @@ async function escolherPagina(b) {
   const { data, error } = await sb.functions.invoke("conectar-pagina", { body: { acao: "escolher", sessao: estado.fbSessao, page_id: b.dataset.pg } });
   if (error || !data?.passos) { toast(data?.erro || "Não foi possível conectar a Página.", 6000); return desenharConexoes(); }
   const c = clienteAtual(); c.page_id = data.pagina.id;
-  estado.fbResultado = data;
+  estado.fbResultado = data; estado.fbLista = null;
   desenharConexoes();
   verificarConexoes(true);
 }
@@ -1069,13 +1070,15 @@ function desenharConexoes() {
   const achados = p.achados?.length ? `<p class="achados">Encontrado: ${p.achados.map(esc).join(", ")}</p>` : "";
   $("#cx-passos").innerHTML = pontos + `<div class="cx${p.feito ? " feito" : ""}"><div class="ic num">${p.feito ? "✓" : estado.cxPasso + 1}</div><div class="tx">
     <b>${p.titulo}${p.opcional ? ' <span class="sel-st">Opcional</span>' : ""}</b><p>${p.texto}</p>${achados}
-    ${p.feito ? `<div class="cx-ok">✓ Confirmado! Pode seguir.</div>` + (p.k === "pagina" ? `<div id="cx-fb"></div>` : "") : p.corpo}</div></div>`;
+    ${p.feito ? `<div class="cx-ok">✓ Confirmado! Pode seguir.</div>` + (p.k === "pagina" ? `<div class="acoes-cx"><button type="button" class="btn btn-fb btn-p" id="cx-btn-fb">Conectar com o Facebook</button></div><div id="cx-fb"></div>` : "") : p.corpo}</div></div>`;
   const prox = p.feito
     ? `<button type="button" class="btn btn-lima btn-p" data-nav="proximo">Próximo →</button>`
     : p.opcional
       ? `<button type="button" class="btn btn-fantasma btn-p" data-nav="pular">Pular este passo</button>`
       : (p.k === "bm" ? "" : `<span class="cx-espera">Aguardando confirmação…</span>`);
-  if (p.k === "pagina" && c.page_id && $("#cx-fb")) {
+  if (p.k === "pagina" && $("#cx-fb") && estado.fbSessao && !estado.fbResultado && estado.fbLista) {
+    $("#cx-fb").innerHTML = estado.fbLista;
+  } else if (p.k === "pagina" && c.page_id && $("#cx-fb")) {
     $("#cx-fb").innerHTML = htmlResultadoFb() + `<div id="cx-ev"></div>`;
     iniciarEventos(c.page_id);
   }
