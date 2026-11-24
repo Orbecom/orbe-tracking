@@ -861,7 +861,7 @@ function desenharConexoes() {
     bm: !!bm, parceria: !!o.parceria?.ok, pagina: (o.paginas || []).length > 0, insta: (o.instagram || []).length > 0,
     conta: (o.contas || []).length > 0, pixel: (o.pixels || []).length > 0, wa: !!c.wa_conectado,
   };
-  const obrig = ["bm", "parceria", "pagina", "conta", "pixel", "wa"];
+  const obrig = ["bm", "parceria", "pagina", "conta", "wa"];
   const feitos = obrig.filter((k) => st[k]).length;
   $("#cx-resumo").textContent = feitos === obrig.length ? "Tudo conectado 🎉" : `${feitos} de ${obrig.length} passos concluídos`;
   $("#cx-barra").style.width = Math.round((feitos / obrig.length) * 100) + "%";
@@ -891,7 +891,7 @@ function desenharConexoes() {
     lista((o.contas || []).map((p) => p.nome + (p.ativa ? "" : " (desativada)")), "Encontrada") + (st.conta || propria ? "" : compartilhar("ad_accounts", "Contas de anúncios", "na conta que vai rodar os anúncios"))));
   passos.push(passoCx(6, st.pixel, "Pixel (conjunto de dados)",
     "Para a Meta saber quais anúncios trazem vendas.",
-    lista((o.pixels || []).map((p) => p.nome), "Encontrado") + (st.pixel || propria ? "" : compartilhar("events_dataset_and_pixel", "Conjuntos de dados e pixels", "no pixel da empresa") + `<p class="achados">Não tem pixel? Tudo bem, a Orbe cria um para você. Avise no WhatsApp.</p>`)));
+    lista((o.pixels || []).map((p) => p.nome), "Encontrado") + (st.pixel || propria ? "" : compartilhar("events_dataset_and_pixel", "Conjuntos de dados e pixels", "no pixel da empresa") + `<p class="achados">Se o botão <b>Atribuir parceiro</b> estiver desativado, é uma trava da Meta para empresas novas: libera depois de algumas semanas. Pode pular este passo, porque ao conectar o WhatsApp o painel já cria o conjunto de dados das vendas.</p>`), true));
   passos.push(passoCx(7, st.wa, "WhatsApp",
     "Liga o WhatsApp Business ao painel: os contatos dos anúncios aparecem aqui sozinhos. Leva uns 5 minutos, com o celular da empresa em mãos.",
     st.wa ? "" : `<div class="acoes-cx"><button type="button" class="btn btn-lima btn-p" id="cx-btn-wa">Conectar WhatsApp</button></div>`));
