@@ -6,7 +6,19 @@
 <title>Orbe Tracking</title>
 <meta name="theme-color" content="#f6f4fb">
 <meta name="color-scheme" content="light">
-<style>:root{color-scheme:light}:root[data-tema="escuro"]{color-scheme:dark}</style>
+<style>:root{color-scheme:light}:root[data-tema="escuro"]{color-scheme:dark}
+.btn-fb{background:#1877F2;color:#fff;border:0}
+.btn-fb:hover{filter:brightness(1.08)}
+.fb-paginas{display:grid;gap:8px;margin-top:6px}
+.fb-pg{display:flex;gap:10px;align-items:center;text-align:left;padding:10px;border:1px solid var(--borda,#ddd);border-radius:12px;background:transparent;color:inherit;cursor:pointer}
+.fb-pg img{width:36px;height:36px;border-radius:50%}
+.fb-pg span{display:flex;flex-direction:column}
+.fb-pg small{opacity:.7}
+.fb-pg.sel{outline:2px solid #1877F2}
+.fb-res{list-style:none;padding:0;margin:8px 0;display:grid;gap:4px}
+.fb-res li.ok{color:#1a8a4a}.fb-res li.erro{color:#c0392b}
+.cx-manual{margin-top:10px}.cx-manual summary{cursor:pointer;opacity:.8}
+</style>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -593,6 +605,64 @@ tfoot tr[style] td{font-weight:400;background:transparent}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script>
+// ---------- Modo em inglês (?lang=en) — usado na gravação para a análise da Meta ----------
+const LANG_EN = (() => {
+  try {
+    const q = new URLSearchParams(location.search).get("lang");
+    if (q) localStorage.setItem("orbe-lang", q);
+    return (q || localStorage.getItem("orbe-lang")) === "en";
+  } catch (_) { return false; }
+})();
+const EN = {
+  "Conexões": "Connections", "Leads": "Leads", "Painel": "Dashboard", "Relatórios": "Reports", "Sair": "Log out",
+  "Hoje": "Today", "Ontem": "Yesterday", "Últimos 7 dias": "Last 7 days", "Últimos 30 dias": "Last 30 days", "Este mês": "This month", "Mês passado": "Last month",
+  "Vou te guiar passo a passo. Cada botão abre o lugar certo na Meta, e eu confiro sozinho se deu certo antes de seguir.": "I'll guide you step by step. Each button opens the right place on Meta, and I automatically check that it worked before moving on.",
+  "Verificar agora": "Check now", "Verificando…": "Checking…", "Feito": "Done", "Pendente": "Pending", "Opcional": "Optional",
+  "Seu portfólio empresarial": "Your business portfolio", "Adicione a Orbe como parceira": "Add Orbe as a partner",
+  "Página do Facebook": "Facebook Page", "Agora a Página da empresa, para os anúncios saírem em nome dela.": "Now your business Page, so ads run on its behalf.",
+  "Conectar com o Facebook": "Connect with Facebook", "Prefere fazer manualmente?": "Prefer to do it manually?",
+  "Carregando suas Páginas…": "Loading your Pages…", "Escolha a Página da empresa:": "Choose your business Page:",
+  "Acesso de parceiro concedido à Orbe Media": "Partner access granted to Orbe Media", "Página salva no painel": "Page saved to the dashboard",
+  "Eventos de webhook recebidos desta Página:": "Webhook events received from this Page:",
+  "Aguardando o primeiro evento de webhook desta Página… (publique algo na Página para testar)": "Waiting for the first webhook event from this Page… (publish a post on the Page to test)",
+  "Instagram": "Instagram", "Conta de anúncios": "Ad account", "Pixel (conjunto de dados)": "Pixel (dataset)", "WhatsApp": "WhatsApp",
+  "Conectar WhatsApp": "Connect WhatsApp", "Próximo →": "Next →", "← Voltar": "← Back", "Pular este passo": "Skip this step",
+  "Aguardando confirmação…": "Waiting for confirmation…", "✓ Confirmado! Pode seguir.": "✓ Confirmed! You can continue.",
+  "Ir para o que falta": "Go to what's missing", "Concluir": "Finish", "Falta pouco": "Almost there", "Pronto!": "Done!",
+  "Tudo conectado 🎉": "All connected 🎉", "Login cancelado.": "Login canceled.", "Verificação concluída": "Check complete",
+  "Nenhuma Página encontrada nesse perfil.": "No Pages found on this profile.",
+};
+const EN_RE = [
+  [/^Passo (\d+) de (\d+)$/, "Step $1 of $2"], [/^Última conferência: (.*)$/, "Last check: $1"],
+  [/^Encontrado: (.*)$/, "Found: $1"], [/^Instagram: (.*)$/, "Instagram: $1"],
+  [/^(\d+) de (\d+) obrigatórios$/, "$1 of $2 required"],
+  [/^Página (.*) inscrita no webhook \(campos: (.*)\)$/, "Page $1 subscribed to webhook (fields: $2)"],
+];
+function traduzir(t) {
+  const k = t.trim(); if (!k) return t;
+  if (EN[k]) return t.replace(k, EN[k]);
+  for (const [re, r] of EN_RE) if (re.test(k)) return t.replace(k, k.replace(re, r));
+  return t;
+}
+function traduzirArvore(raiz) {
+  const w = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT);
+  let n; while ((n = w.nextNode())) { const v = traduzir(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; }
+  raiz.querySelectorAll?.("[placeholder],[aria-label],[title]").forEach((el) => {
+    for (const a of ["placeholder", "aria-label", "title"]) if (el.hasAttribute(a)) { const v = traduzir(el.getAttribute(a)); if (v !== el.getAttribute(a)) el.setAttribute(a, v); }
+  });
+}
+if (LANG_EN) {
+  document.documentElement.lang = "en";
+  const inicio = () => {
+    traduzirArvore(document.body);
+    new MutationObserver((ms) => { for (const m of ms) {
+      if (m.type === "characterData") { const v = traduzir(m.target.nodeValue); if (v !== m.target.nodeValue) m.target.nodeValue = v; }
+      m.addedNodes.forEach((x) => x.nodeType === 3 ? (x.nodeValue = traduzir(x.nodeValue)) : x.nodeType === 1 && traduzirArvore(x));
+    } }).observe(document.body, { childList: true, subtree: true, characterData: true });
+  };
+  document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", inicio) : inicio();
+}
+
 const SUPABASE_URL = "https://kpdurajnbnpdnjofwefn.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwZHVyYWpuYm5wZG5qb2Z3ZWZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDI4ODMsImV4cCI6MjEwNzIxODg4M30.GtbauzZ396VBxTrbHTVsc3nprx4mMFjRySI_KxoGTZI";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -790,7 +860,7 @@ $("#btn-tema").addEventListener("click", () => {
 async function abrirApp() {
   $("#tela-login").classList.add("hide"); $("#tela-app").classList.remove("hide");
   const [{ data: clientes }, { data: papel }] = await Promise.all([
-    sb.from("clientes").select("id, nome, ad_account_id, wa_conectado, metricas_sincronizadas_em, metricas_erro, tags, bm_id, ig_usuario, onboarding, onboarding_verificado_em").order("nome"),
+    sb.from("clientes").select("id, nome, ad_account_id, wa_conectado, metricas_sincronizadas_em, metricas_erro, tags, bm_id, ig_usuario, page_id, onboarding, onboarding_verificado_em").order("nome"),
     sb.rpc("meu_papel"),
   ]);
   estado.clientes = clientes || []; estado.papel = papel || "cliente";
@@ -862,6 +932,74 @@ function passoCx(n, feito, titulo, texto, corpo, opcional) {
 function lista(itens, rotulo) {
   return itens?.length ? `<p class="achados">${rotulo}: ${itens.map((x) => esc(x)).join(", ")}</p>` : "";
 }
+
+// ---------- Conectar Página pelo login da Meta (pages_show_list + pages_manage_metadata) ----------
+const FB_APP = "1738658170771969";
+const FB_CONFIG_PAGINAS = ""; // ID da configuração do Login para Empresas (Páginas). Vazio = usa scope.
+function carregarFB() {
+  return new Promise((ok, erro) => {
+    if (window.FB) return ok();
+    window.fbAsyncInit = () => { FB.init({ appId: FB_APP, xfbml: false, version: "v23.0" }); ok(); };
+    const s = document.createElement("script");
+    s.src = `https://connect.facebook.net/${LANG_EN ? "en_US" : "pt_BR"}/sdk.js`;
+    s.async = true; s.crossOrigin = "anonymous"; s.onerror = erro;
+    document.head.appendChild(s);
+  });
+}
+async function conectarFacebook(b) {
+  b.disabled = true;
+  try { await carregarFB(); } catch (_) { b.disabled = false; return toast("Não foi possível carregar o login da Meta.", 6000); }
+  const opcoes = FB_CONFIG_PAGINAS
+    ? { config_id: FB_CONFIG_PAGINAS, response_type: "code", override_default_response_type: true }
+    : { scope: "pages_show_list,pages_manage_metadata", response_type: "code", override_default_response_type: true, auth_type: "rerequest" };
+  FB.login(async (resp) => {
+    const code = resp?.authResponse?.code;
+    if (!code) { b.disabled = false; return toast("Login cancelado.", 4000); }
+    $("#cx-fb").innerHTML = `<p class="nota">Carregando suas Páginas…</p>`;
+    const { data, error } = await sb.functions.invoke("conectar-pagina", { body: { acao: "listar", cliente: estado.cliente, code } });
+    b.disabled = false;
+    if (error || !data?.ok) { $("#cx-fb").innerHTML = ""; return toast(data?.erro || "Não foi possível listar as Páginas.", 6000); }
+    estado.fbSessao = data.sessao;
+    $("#cx-fb").innerHTML = data.paginas.length
+      ? `<p class="achados">Escolha a Página da empresa:</p><div class="fb-paginas">${data.paginas.map((p) =>
+          `<button type="button" class="fb-pg" data-pg="${esc(p.id)}">${p.foto ? `<img src="${esc(p.foto)}" alt="">` : ""}<span><b>${esc(p.nome)}</b>${p.instagram ? `<small>Instagram: @${esc(p.instagram)}</small>` : ""}<small>ID ${esc(p.id)}</small></span></button>`).join("")}</div>`
+      : `<p class="nota">Nenhuma Página encontrada nesse perfil.</p>`;
+  }, opcoes);
+}
+async function escolherPagina(b) {
+  document.querySelectorAll(".fb-pg").forEach((x) => (x.disabled = true));
+  b.classList.add("sel");
+  const { data, error } = await sb.functions.invoke("conectar-pagina", { body: { acao: "escolher", sessao: estado.fbSessao, page_id: b.dataset.pg } });
+  if (error || !data?.passos) { toast(data?.erro || "Não foi possível conectar a Página.", 6000); return desenharConexoes(); }
+  const c = clienteAtual(); c.page_id = data.pagina.id;
+  estado.fbResultado = data;
+  desenharConexoes();
+  verificarConexoes(true);
+}
+function htmlResultadoFb() {
+  const d = estado.fbResultado; if (!d || d.pagina.id !== clienteAtual()?.page_id) return "";
+  const st = (ok, txt) => `<li class="${ok ? "ok" : "erro"}"><span>${ok ? "✓" : "✗"}</span> ${txt}</li>`;
+  return `<ul class="fb-res">
+    ${st(d.passos.webhook.ok, `Página ${esc(d.pagina.nome)} inscrita no webhook (campos: ${esc((d.passos.webhook.campos || []).join(", ") || "—")})`)}
+    ${st(d.passos.parceiro.ok, "Acesso de parceiro concedido à Orbe Media")}
+    ${st(d.passos.gravar.ok, "Página salva no painel")}</ul>`;
+}
+// Linha do evento de webhook da Página (atualiza a cada 5 s enquanto o passo está aberto)
+let evTimer = null;
+function iniciarEventos(pageId) {
+  clearInterval(evTimer);
+  const ler = async () => {
+    if (!$("#cx-ev")) return clearInterval(evTimer);
+    const { data } = await sb.from("eventos_pagina").select("campo, item, verbo, recebido_em")
+      .eq("page_id", pageId).order("recebido_em", { ascending: false }).limit(3);
+    const el = $("#cx-ev"); if (!el) return;
+    el.innerHTML = data?.length
+      ? `<p class="achados">Eventos de webhook recebidos desta Página:</p><ul class="fb-res">${data.map((e) =>
+          `<li class="ok"><span>⚡</span> ${esc(e.campo)}${e.item ? " · " + esc(e.item) : ""}${e.verbo ? " · " + esc(e.verbo) : ""} — ${dataHora(e.recebido_em)}</li>`).join("")}</ul>`
+      : `<p class="nota">Aguardando o primeiro evento de webhook desta Página… (publique algo na Página para testar)</p>`;
+  };
+  ler(); evTimer = setInterval(ler, 5000);
+}
 function passosConexoes() {
   const c = clienteAtual(); if (!c) return null;
   const o = c.onboarding || {}; const bm = c.bm_id;
@@ -882,7 +1020,9 @@ function passosConexoes() {
       <div class="acoes-cx">${abrir("partners", "Abrir Parceiros")}${copiar}</div>` });
   L.push({ k: "pagina", feito: (o.paginas || []).length > 0, titulo: "Página do Facebook",
     texto: "Agora a Página da empresa, para os anúncios saírem em nome dela.",
-    achados: (o.paginas || []).map((p) => p.nome), corpo: propria ? "" : compartilhar("pages", "Páginas", "na Página da empresa") });
+    achados: (o.paginas || []).map((p) => p.nome),
+    corpo: `<div class="acoes-cx"><button type="button" class="btn btn-fb btn-p" id="cx-btn-fb">Conectar com o Facebook</button></div><div id="cx-fb"></div>` +
+      (propria ? "" : `<details class="cx-manual"><summary>Prefere fazer manualmente?</summary>${compartilhar("pages", "Páginas", "na Página da empresa")}</details>`) });
   L.push({ k: "insta", opcional: true, feito: (o.instagram || []).length > 0, titulo: "Instagram",
     texto: "Para os anúncios aparecerem com o seu @. Me diga o @ e atribua a conta à Orbe.",
     achados: (o.instagram || []).map((p) => "@" + p.usuario),
@@ -929,12 +1069,16 @@ function desenharConexoes() {
   const achados = p.achados?.length ? `<p class="achados">Encontrado: ${p.achados.map(esc).join(", ")}</p>` : "";
   $("#cx-passos").innerHTML = pontos + `<div class="cx${p.feito ? " feito" : ""}"><div class="ic num">${p.feito ? "✓" : estado.cxPasso + 1}</div><div class="tx">
     <b>${p.titulo}${p.opcional ? ' <span class="sel-st">Opcional</span>' : ""}</b><p>${p.texto}</p>${achados}
-    ${p.feito ? `<div class="cx-ok">✓ Confirmado! Pode seguir.</div>` : p.corpo}</div></div>`;
+    ${p.feito ? `<div class="cx-ok">✓ Confirmado! Pode seguir.</div>` + (p.k === "pagina" ? `<div id="cx-fb"></div>` : "") : p.corpo}</div></div>`;
   const prox = p.feito
     ? `<button type="button" class="btn btn-lima btn-p" data-nav="proximo">Próximo →</button>`
     : p.opcional
       ? `<button type="button" class="btn btn-fantasma btn-p" data-nav="pular">Pular este passo</button>`
       : (p.k === "bm" ? "" : `<span class="cx-espera">Aguardando confirmação…</span>`);
+  if (p.k === "pagina" && c.page_id && $("#cx-fb")) {
+    $("#cx-fb").innerHTML = htmlResultadoFb() + `<div id="cx-ev"></div>`;
+    iniciarEventos(c.page_id);
+  }
   $("#cx-nav").innerHTML = (estado.cxPasso > 0 ? `<button type="button" class="btn btn-fantasma btn-p" data-nav="voltar">← Voltar</button>` : "<span></span>") + `<span class="esp"></span>` + prox;
 }
 $("#cx-nav").addEventListener("click", (e) => {
@@ -961,6 +1105,8 @@ $("#cx-verificar").addEventListener("click", () => verificarConexoes(false));
 $("#cx-passos").addEventListener("click", async (e) => {
   const t = e.target.closest("button"); if (!t) return;
   if (t.id === "cx-btn-wa") return conectarWa(t, "Conectar WhatsApp");
+  if (t.id === "cx-btn-fb") return conectarFacebook(t);
+  if (t.classList.contains("fb-pg")) return escolherPagina(t);
   if (t.dataset.copiar) {
     try { await navigator.clipboard.writeText(t.dataset.copiar); toast("ID da Orbe copiado"); } catch (_) { toast("Copie o ID: " + t.dataset.copiar, 6000); }
     return;
@@ -1868,7 +2014,7 @@ $("#btn-sync").addEventListener("click", async (e) => {
   if (error || !r?.ok) { toast(r?.erro || error?.message || "Erro ao atualizar"); return; }
   const erros = (r.clientes || []).filter((x) => x.erro);
   toast(erros.length ? `Erro em ${erros[0].cliente}: ${erros[0].erro}` : "Métricas atualizadas ✓", erros.length ? 6000 : 3200);
-  const { data } = await sb.from("clientes").select("id, nome, ad_account_id, wa_conectado, metricas_sincronizadas_em, metricas_erro, tags, bm_id, ig_usuario, onboarding, onboarding_verificado_em").order("nome");
+  const { data } = await sb.from("clientes").select("id, nome, ad_account_id, wa_conectado, metricas_sincronizadas_em, metricas_erro, tags, bm_id, ig_usuario, page_id, onboarding, onboarding_verificado_em").order("nome");
   estado.clientes = data || estado.clientes;
   carregarPainel();
 });
