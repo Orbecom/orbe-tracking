@@ -952,7 +952,7 @@ function conectarFacebook(b) {
   b.disabled = true;
   const opcoes = FB_CONFIG_PAGINAS
     ? { config_id: FB_CONFIG_PAGINAS }
-    : { scope: "pages_show_list,pages_manage_metadata", auth_type: "rerequest" };
+    : { scope: "pages_show_list,pages_manage_metadata,business_management", auth_type: "rerequest" };
   FB.login((resp) => { (async () => {
     const token = resp?.authResponse?.accessToken;
     if (!token) { b.disabled = false; return toast("Login cancelado.", 4000); }
