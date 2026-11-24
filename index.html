@@ -943,7 +943,21 @@ function reabrirConexoes() {
   let v = null; try { v = sessionStorage.getItem("orbe_cx"); } catch (_) {}
   if (v && v === estado.cliente && $("#modal-conexoes").classList.contains("hide")) $("#btn-conexoes").click();
 }
-new MutationObserver(() => { if ($("#modal-conexoes").classList.contains("hide")) lembrarCx(null); })
+// Enquanto a janela está aberta e falta algo, confere a cada 15 s (no app instalado, a Meta abre por cima e não há "voltar")
+let cxTimer = null;
+function pararCx() { if (cxTimer) { clearInterval(cxTimer); cxTimer = null; } }
+function iniciarCx() {
+  pararCx();
+  cxTimer = setInterval(() => {
+    const c = clienteAtual();
+    if ($("#modal-conexoes").classList.contains("hide") || !c?.bm_id || c.onboarding?.completo) return pararCx();
+    const digitando = document.activeElement?.tagName === "INPUT" && $("#modal-conexoes").contains(document.activeElement);
+    if (!document.hidden && !digitando) verificarConexoes(true);
+  }, 15000);
+  setTimeout(pararCx, 20 * 60 * 1000);
+}
+window.addEventListener("focus", () => { if (!$("#modal-conexoes").classList.contains("hide") && Date.now() - cxUltimaVolta > 5000) { cxUltimaVolta = Date.now(); verificarConexoes(true); } });
+new MutationObserver(() => { if ($("#modal-conexoes").classList.contains("hide")) { lembrarCx(null); pararCx(); } })
   .observe($("#modal-conexoes"), { attributes: true, attributeFilter: ["class"] });
 let cxUltimaVolta = 0;
 document.addEventListener("visibilitychange", () => {
@@ -953,7 +967,7 @@ document.addEventListener("visibilitychange", () => {
 });
 $("#btn-conexoes").addEventListener("click", () => {
   lembrarCx(estado.cliente);
-  desenharConexoes();
+  desenharConexoes(); iniciarCx();
   $("#modal-conexoes").classList.remove("hide");
   const c = clienteAtual();
   const velho = !c?.onboarding_verificado_em || (Date.now() - new Date(c.onboarding_verificado_em).getTime()) > 2 * 60 * 1000;
