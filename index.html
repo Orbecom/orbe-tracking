@@ -959,7 +959,7 @@ function conectarFacebook(b) {
     $("#cx-fb").innerHTML = `<p class="nota">Carregando suas Páginas…</p>`;
     const { data, error } = await sb.functions.invoke("conectar-pagina", { body: { acao: "listar", cliente: estado.cliente, code } });
     b.disabled = false;
-    if (error || !data?.ok) { $("#cx-fb").innerHTML = ""; return toast(data?.erro || "Não foi possível listar as Páginas.", 6000); }
+    if (error || !data?.ok) { $("#cx-fb").innerHTML = ""; return toast((data?.erro || "Não foi possível listar as Páginas.") + (data?.detalhe ? " — " + data.detalhe : ""), 12000); }
     estado.fbSessao = data.sessao;
     estado.fbResultado = null;
     estado.fbLista = $("#cx-fb").innerHTML = data.paginas.length
