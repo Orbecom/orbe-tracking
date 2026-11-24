@@ -230,6 +230,18 @@ tfoot td{font-weight:700;background:var(--bg2)}
 .cx p{margin:4px 0 8px;font-size:13px}
 .cx .libera{font-size:12px;color:var(--mut);margin-bottom:10px}
 .cx .libera i{font-style:normal;font-weight:700;color:var(--texto)}
+.cx .ic.num{background:var(--line);color:var(--mut);font-size:15px;font-weight:800}
+.cx.feito .ic.num{background:#d7f7c2;color:#1d5a0b}
+.cx .sel-st.pend{background:#fff1c2;color:#7a5200}
+.cx .acoes-cx{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.cx .achados{font-size:12px;color:var(--mut);margin:0 0 8px}
+.cx ol{margin:0 0 10px 18px;padding:0;font-size:13px;color:var(--mut)}
+.cx ol li{margin:2px 0}
+.cx-prog{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin:4px 0 4px}
+.cx-prog div{height:100%;background:var(--roxo);transition:width .3s}
+.cx-topo{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-bottom:6px}
+.cx-topo small{color:var(--mut);font-size:12px}
+.cx input.campo{padding:9px 12px;max-width:220px}
 .modal h2{font-size:18px;margin-bottom:6px}
 .modal p{color:var(--mut);font-size:14px;margin-bottom:16px}
 .modal .linha{display:flex;gap:10px;margin-top:14px}
@@ -527,45 +539,22 @@ tfoot tr[style] td{font-weight:400;background:transparent}
   </div>
 </div>
 
-<!-- MODAL CONEXÕES -->
+<!-- MODAL CONEXÕES (checklist de onboarding) -->
 <div id="modal-conexoes" class="fundo hide">
   <div class="modal conex" role="dialog" aria-modal="true" aria-labelledby="cx-titulo">
     <div class="det-topo">
       <h2 id="cx-titulo">Conexões</h2>
       <button class="fechar" type="button" data-fechar aria-label="Fechar">×</button>
     </div>
-    <p>Conecte os canais da empresa para os contatos dos anúncios aparecerem aqui sozinhos. Você não precisa sair desta tela para entender o que cada um faz.</p>
-
-    <div class="cx" id="cx-wa">
-      <div class="ic" aria-hidden="true">💬</div>
-      <div class="tx">
-        <b>WhatsApp <span class="sel-st" id="cx-wa-st">Não conectado</span></b>
-        <p>Liga o WhatsApp Business da empresa ao painel. Leva uns 5 minutos, com o celular da empresa em mãos.</p>
-        <div class="libera"><i>Libera:</i> leads que chamam no WhatsApp (com o anúncio de origem), marcar venda e enviar a compra para a Meta.</div>
-        <button type="button" class="btn btn-lima btn-p" id="cx-btn-wa">Conectar WhatsApp</button>
-      </div>
+    <p>Siga os passos para liberar os acessos que a Orbe precisa. Cada botão abre o lugar certo na Meta, e o painel confere sozinho se deu certo.</p>
+    <div class="cx-topo">
+      <b id="cx-resumo">—</b>
+      <button type="button" class="btn btn-roxo btn-p" id="cx-verificar">Verificar agora</button>
     </div>
-
-    <div class="cx">
-      <div class="ic" aria-hidden="true">✉️</div>
-      <div class="tx">
-        <b>Messenger (Facebook) <span class="sel-st">Em breve</span></b>
-        <p>Você entra com o Facebook e escolhe a Página da empresa.</p>
-        <div class="libera"><i>Libera:</i> leads que chamam no Messenger da Página, com o anúncio de origem.</div>
-        <button type="button" class="btn btn-fantasma btn-p" disabled>Disponível em breve</button>
-      </div>
-    </div>
-
-    <div class="cx">
-      <div class="ic" aria-hidden="true">📷</div>
-      <div class="tx">
-        <b>Instagram Direct <span class="sel-st">Em breve</span></b>
-        <p>Você entra com o Instagram da empresa e autoriza a leitura das mensagens.</p>
-        <div class="libera"><i>Libera:</i> leads que chamam no Direct, com nome, @ e o anúncio de origem.</div>
-        <button type="button" class="btn btn-fantasma btn-p" disabled>Disponível em breve</button>
-      </div>
-    </div>
-    <p class="nota" style="margin:14px 0 0">Messenger e Instagram dependem de uma aprovação da Meta e ainda não estão liberados. Se precisar conectar agora, fale com a Orbe.</p>
+    <div class="cx-prog"><div id="cx-barra" style="width:0%"></div></div>
+    <small class="nota" id="cx-quando" style="display:block;margin:0 0 4px"></small>
+    <div id="cx-passos"></div>
+    <p class="nota" style="margin:14px 0 0">Mensagens do Messenger e do Instagram Direct no painel: em breve.</p>
   </div>
 </div>
 
@@ -791,7 +780,7 @@ $("#btn-tema").addEventListener("click", () => {
 async function abrirApp() {
   $("#tela-login").classList.add("hide"); $("#tela-app").classList.remove("hide");
   const [{ data: clientes }, { data: papel }] = await Promise.all([
-    sb.from("clientes").select("id, nome, ad_account_id, wa_conectado, metricas_sincronizadas_em, metricas_erro, tags").order("nome"),
+    sb.from("clientes").select("id, nome, ad_account_id, wa_conectado, metricas_sincronizadas_em, metricas_erro, tags, bm_id, onboarding, onboarding_verificado_em").order("nome"),
     sb.rpc("meu_papel"),
   ]);
   estado.clientes = clientes || []; estado.papel = papel || "cliente";
@@ -835,10 +824,12 @@ document.querySelectorAll(".aba").forEach((b) => b.addEventListener("click", () 
 
 function recarregar() { atualizarAvisoWa(); if (estado.aba === "leads") carregarLeads(); else if (estado.aba === "painel") carregarPainel(); else carregarTabela(); }
 
-// Botão "Conectar WhatsApp": aparece para toda empresa cujo WhatsApp ainda não foi conectado e confirmado
+// ---------- Conexões: checklist de onboarding ----------
+const ORBE_BM = "1394199177728771";
+function clienteAtual() { return estado.clientes.find((x) => x.id === estado.cliente); }
 function atualizarAvisoWa() {
-  const c = estado.clientes.find((x) => x.id === estado.cliente);
-  $("#pt-conexoes").classList.toggle("hide", !c || !!c.wa_conectado);
+  const c = clienteAtual();
+  $("#pt-conexoes").classList.toggle("hide", !c || !!c.onboarding?.completo);
 }
 async function conectarWa(b, rotulo) {
   b.disabled = true; b.textContent = "Abrindo…";
@@ -850,19 +841,100 @@ async function conectarWa(b, rotulo) {
   }
   location.href = data;
 }
-$("#cx-btn-wa").addEventListener("click", (e) => conectarWa(e.currentTarget, "Conectar WhatsApp"));
+function linkBM(pagina, bm) {
+  return `https://business.facebook.com/latest/settings/${pagina}` + (bm ? `?business_id=${encodeURIComponent(bm)}` : "");
+}
+function passoCx(n, feito, titulo, texto, corpo, opcional) {
+  const st = feito ? '<span class="sel-st ok">Feito</span>' : `<span class="sel-st ${opcional ? "" : "pend"}">${opcional ? "Opcional" : "Pendente"}</span>`;
+  return `<div class="cx${feito ? " feito" : ""}"><div class="ic num" aria-hidden="true">${feito ? "✓" : n}</div><div class="tx">
+    <b>${titulo} ${st}</b><p>${texto}</p>${corpo}</div></div>`;
+}
+function lista(itens, rotulo) {
+  return itens?.length ? `<p class="achados">${rotulo}: ${itens.map((x) => esc(x)).join(", ")}</p>` : "";
+}
+function desenharConexoes() {
+  const c = clienteAtual(); if (!c) return;
+  const o = c.onboarding || {}; const bm = c.bm_id;
+  const propria = bm === ORBE_BM;
+  const st = {
+    bm: !!bm, parceria: !!o.parceria?.ok, pagina: (o.paginas || []).length > 0, insta: (o.instagram || []).length > 0,
+    conta: (o.contas || []).length > 0, pixel: (o.pixels || []).length > 0, wa: !!c.wa_conectado,
+  };
+  const obrig = ["bm", "parceria", "pagina", "conta", "pixel", "wa"];
+  const feitos = obrig.filter((k) => st[k]).length;
+  $("#cx-resumo").textContent = feitos === obrig.length ? "Tudo conectado 🎉" : `${feitos} de ${obrig.length} passos concluídos`;
+  $("#cx-barra").style.width = Math.round((feitos / obrig.length) * 100) + "%";
+  $("#cx-quando").textContent = c.onboarding_verificado_em ? "Última verificação: " + dataHora(c.onboarding_verificado_em) : (bm ? "Ainda não verificado." : "");
+  $("#cx-verificar").classList.toggle("hide", !bm);
+  const copiar = `<button type="button" class="btn btn-fantasma btn-p" data-copiar="${ORBE_BM}">Copiar ID da Orbe</button>`;
+  const abrir = (pag, txt) => `<a class="btn btn-fantasma btn-p" href="${linkBM(pag, bm)}" target="_blank" rel="noopener">${txt}</a>`;
+  const compartilhar = (tipo) => `<ol><li>Clique em <b>${abrir("partners", "Abrir Parceiros")}</b> e escolha <b>Orbe Company</b>.</li><li>Clique em <b>Compartilhar ativos</b>, escolha ${tipo} e marque <b>Controle total</b>.</li></ol>`;
+  const passos = [];
+  passos.push(passoCx(1, st.bm, "Informe seu portfólio empresarial",
+    bm ? `ID informado: <b>${esc(bm)}</b>${o.bm?.nome ? " (" + esc(o.bm.nome) + ")" : ""}.` : "É o número da sua empresa no Gerenciador de Negócios da Meta. Abra a página, copie o número em <b>Identificação do portfólio empresarial</b> e cole aqui.",
+    (bm && estado.papel !== "agencia") ? "" : `<div class="acoes-cx"><input class="campo" id="cx-bm" inputmode="numeric" placeholder="Ex.: 1234567890123456" value="${esc(bm || "")}">
+      <button type="button" class="btn btn-lima btn-p" id="cx-salvar-bm">${bm ? "Trocar" : "Salvar"}</button>${abrir("business_info", "Onde encontro?")}</div>`));
+  if (!propria) passos.push(passoCx(2, st.parceria, "Adicione a Orbe como parceira",
+    "Isso dá à Orbe acesso aos ativos que você escolher, sem precisar da sua senha.",
+    st.parceria ? "" : `<ol><li>Copie o ID da Orbe: <b>${ORBE_BM}</b></li><li>Em Parceiros, clique em <b>Adicionar</b> → <b>Conceder a um parceiro acesso aos seus ativos</b> e cole o ID.</li><li>Escolha os ativos dos próximos passos e marque <b>Controle total</b>.</li></ol>
+     <div class="acoes-cx">${copiar}${abrir("partners", "Abrir Parceiros")}</div>`));
+  passos.push(passoCx(3, st.pagina, "Página do Facebook",
+    "Para os anúncios saírem em nome da sua Página.",
+    lista((o.paginas || []).map((p) => p.nome), "Encontrada") + (st.pagina || propria ? "" : compartilhar("<b>Páginas</b> e marque a Página da empresa"))));
+  passos.push(passoCx(4, st.insta, "Instagram",
+    "Para os anúncios aparecerem com o seu @. O Instagram precisa estar ligado à Página do Facebook.",
+    lista((o.instagram || []).map((p) => "@" + p.usuario), "Encontrado") + (st.insta || propria ? "" : compartilhar("<b>Contas do Instagram</b>") + `<div class="acoes-cx">${abrir("instagram_account", "Ver contas do Instagram")}</div>`), true));
+  passos.push(passoCx(5, st.conta, "Conta de anúncios",
+    "Onde as campanhas rodam e de onde vêm os números do painel.",
+    lista((o.contas || []).map((p) => p.nome + (p.ativa ? "" : " (desativada)")), "Encontrada") + (st.conta || propria ? "" : compartilhar("<b>Contas de anúncios</b>"))));
+  passos.push(passoCx(6, st.pixel, "Pixel (conjunto de dados)",
+    "Para a Meta saber quais anúncios trazem vendas.",
+    lista((o.pixels || []).map((p) => p.nome), "Encontrado") + (st.pixel || propria ? "" : compartilhar("<b>Conjuntos de dados e pixels</b>") + `<p class="achados">Não tem pixel? Tudo bem, a Orbe cria um para você. Avise no WhatsApp.</p>`)));
+  passos.push(passoCx(7, st.wa, "WhatsApp",
+    "Liga o WhatsApp Business ao painel: os contatos dos anúncios aparecem aqui sozinhos. Leva uns 5 minutos, com o celular da empresa em mãos.",
+    st.wa ? "" : `<div class="acoes-cx"><button type="button" class="btn btn-lima btn-p" id="cx-btn-wa">Conectar WhatsApp</button></div>`));
+  $("#cx-passos").innerHTML = passos.join("");
+}
+async function verificarConexoes(silencioso) {
+  const c = clienteAtual(); if (!c?.bm_id) return;
+  const b = $("#cx-verificar"); b.disabled = true; b.textContent = "Verificando…";
+  const { data, error } = await sb.functions.invoke("verificar-onboarding", { body: { cliente: c.id } });
+  b.disabled = false; b.textContent = "Verificar agora";
+  if (error || !data?.ok) { if (!silencioso) toast(data?.erro || "Não foi possível verificar agora. Tente de novo em instantes.", 6000); return; }
+  c.onboarding = data; c.onboarding_verificado_em = new Date().toISOString();
+  desenharConexoes(); atualizarAvisoWa();
+  if (!silencioso) toast(data.completo ? "Tudo certo! Conexões concluídas." : "Verificação concluída");
+}
+$("#cx-verificar").addEventListener("click", () => verificarConexoes(false));
+$("#cx-passos").addEventListener("click", async (e) => {
+  const t = e.target.closest("button"); if (!t) return;
+  if (t.id === "cx-btn-wa") return conectarWa(t, "Conectar WhatsApp");
+  if (t.dataset.copiar) {
+    try { await navigator.clipboard.writeText(t.dataset.copiar); toast("ID da Orbe copiado"); } catch (_) { toast("Copie o ID: " + t.dataset.copiar, 6000); }
+    return;
+  }
+  if (t.id === "cx-salvar-bm") {
+    const v = $("#cx-bm").value.trim();
+    t.disabled = true;
+    const { error } = await sb.rpc("definir_bm", { p_cliente: estado.cliente, p_bm: v });
+    t.disabled = false;
+    if (error) return toast(error.message, 6000);
+    const c = clienteAtual(); c.bm_id = v.replace(/\D/g, ""); c.onboarding = null; c.onboarding_verificado_em = null;
+    desenharConexoes(); verificarConexoes(false);
+  }
+});
 $("#btn-conexoes").addEventListener("click", () => {
-  const c = estado.clientes.find((x) => x.id === estado.cliente);
-  const ok = !!(c && c.wa_conectado);
-  const st = $("#cx-wa-st"); st.textContent = ok ? "Conectado" : "Não conectado"; st.classList.toggle("ok", ok);
-  const b = $("#cx-btn-wa"); b.disabled = ok; b.textContent = ok ? "WhatsApp conectado" : "Conectar WhatsApp";
-  b.classList.toggle("btn-lima", !ok); b.classList.toggle("btn-fantasma", ok);
+  desenharConexoes();
   $("#modal-conexoes").classList.remove("hide");
+  const c = clienteAtual();
+  const velho = !c?.onboarding_verificado_em || (Date.now() - new Date(c.onboarding_verificado_em).getTime()) > 2 * 60 * 1000;
+  if (c?.bm_id && velho) verificarConexoes(true);
 });
 
 // ---------- Novidades (sino no topo) ----------
 // Para avisar uma atualização: acrescente um item NO TOPO desta lista (id único, data, título e texto curto).
 const NOVIDADES = [
+  { id: "2026-11-23-onboarding", data: "23/11/2026", titulo: "Conexões virou um passo a passo", texto: "A janela Conexões agora guia a liberação dos acessos: portfólio, parceria com a Orbe, Página, Instagram, conta de anúncios, pixel e WhatsApp. Cada passo abre o lugar certo na Meta, e o painel confere sozinho o que já está pronto." },
   { id: "2026-11-23-conexoes", data: "23/11/2026", titulo: "Botão Conexões", texto: "Agora há um botão \"Conexões\" no topo. Ele abre uma janela com o WhatsApp, o Messenger e o Instagram: o que cada um faz, o que libera e como conectar. Messenger e Instagram chegam em breve." },
   { id: "2026-11-13-leads", data: "13/11/2026", titulo: "Observações, tags e filtros nos leads", texto: "Dá para escrever observações em cada lead, marcar tags (Indicação, Recompra, Outro) e filtrar a lista por origem (anúncio, orgânico, manual) e por tag. A agência também pode excluir um lead." },
   { id: "2026-11-12-app", data: "12/11/2026", titulo: "Login por senha e app no celular", texto: "O acesso agora é por e-mail e senha, sem precisar de link toda vez. O painel também pode ser instalado na tela inicial do celular, como um aplicativo." },
@@ -1706,7 +1778,7 @@ $("#btn-sync").addEventListener("click", async (e) => {
   if (error || !r?.ok) { toast(r?.erro || error?.message || "Erro ao atualizar"); return; }
   const erros = (r.clientes || []).filter((x) => x.erro);
   toast(erros.length ? `Erro em ${erros[0].cliente}: ${erros[0].erro}` : "Métricas atualizadas ✓", erros.length ? 6000 : 3200);
-  const { data } = await sb.from("clientes").select("id, nome, ad_account_id, wa_conectado, metricas_sincronizadas_em, metricas_erro, tags").order("nome");
+  const { data } = await sb.from("clientes").select("id, nome, ad_account_id, wa_conectado, metricas_sincronizadas_em, metricas_erro, tags, bm_id, onboarding, onboarding_verificado_em").order("nome");
   estado.clientes = data || estado.clientes;
   carregarPainel();
 });
