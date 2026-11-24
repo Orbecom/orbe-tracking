@@ -243,6 +243,15 @@ tfoot td{font-weight:700;background:var(--bg2)}
 .cx-topo{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-bottom:6px}
 .cx-topo small{color:var(--mut);font-size:12px}
 .cx input.campo{padding:9px 12px;max-width:220px}
+.cx-nav{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:14px;flex-wrap:wrap}
+.cx-nav .esp{flex:1}
+.cx-pontos{display:flex;gap:6px;justify-content:center;margin:8px 0 2px}
+.cx-pontos i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.cx-pontos i.ok{background:#7bd35a}.cx-pontos i.at{background:var(--roxo);transform:scale(1.3)}
+.cx-ok{display:flex;align-items:center;gap:8px;background:#d7f7c2;color:#1d5a0b;border-radius:12px;padding:10px 12px;font-weight:700;font-size:14px;margin-top:4px}
+.cx-espera{font-size:12px;color:var(--mut);display:flex;align-items:center;gap:8px}
+.cx-espera::before{content:"";width:10px;height:10px;border-radius:50%;border:2px solid var(--roxo);border-right-color:transparent;animation:gira 1s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
 .modal h2{font-size:18px;margin-bottom:6px}
 .modal p{color:var(--mut);font-size:14px;margin-bottom:16px}
 .modal .linha{display:flex;gap:10px;margin-top:14px}
@@ -547,7 +556,7 @@ tfoot tr[style] td{font-weight:400;background:transparent}
       <h2 id="cx-titulo">Conexões</h2>
       <button class="fechar" type="button" data-fechar aria-label="Fechar">×</button>
     </div>
-    <p>Siga os passos para liberar os acessos que a Orbe precisa. Cada botão abre o lugar certo na Meta, e o painel confere sozinho se deu certo.</p>
+    <p id="cx-intro">Vou te guiar passo a passo. Cada botão abre o lugar certo na Meta, e eu confiro sozinho se deu certo antes de seguir.</p>
     <div class="cx-topo">
       <b id="cx-resumo">—</b>
       <button type="button" class="btn btn-roxo btn-p" id="cx-verificar">Verificar agora</button>
@@ -555,7 +564,7 @@ tfoot tr[style] td{font-weight:400;background:transparent}
     <div class="cx-prog"><div id="cx-barra" style="width:0%"></div></div>
     <small class="nota" id="cx-quando" style="display:block;margin:0 0 4px"></small>
     <div id="cx-passos"></div>
-    <p class="nota" style="margin:14px 0 0">Mensagens do Messenger e do Instagram Direct no painel: em breve.</p>
+    <div class="cx-nav" id="cx-nav"></div>
   </div>
 </div>
 
@@ -853,54 +862,91 @@ function passoCx(n, feito, titulo, texto, corpo, opcional) {
 function lista(itens, rotulo) {
   return itens?.length ? `<p class="achados">${rotulo}: ${itens.map((x) => esc(x)).join(", ")}</p>` : "";
 }
-function desenharConexoes() {
-  const c = clienteAtual(); if (!c) return;
+function passosConexoes() {
+  const c = clienteAtual(); if (!c) return null;
   const o = c.onboarding || {}; const bm = c.bm_id;
   const propria = bm === ORBE_BM;
-  const st = {
-    bm: !!bm, parceria: !!o.parceria?.ok, pagina: (o.paginas || []).length > 0, insta: (o.instagram || []).length > 0,
-    conta: (o.contas || []).length > 0, pixel: (o.pixels || []).length > 0, wa: !!c.wa_conectado,
-  };
-  const obrig = ["bm", "parceria", "pagina", "conta", "wa"];
-  const feitos = obrig.filter((k) => st[k]).length;
-  $("#cx-resumo").textContent = feitos === obrig.length ? "Tudo conectado 🎉" : `${feitos} de ${obrig.length} passos concluídos`;
-  $("#cx-barra").style.width = Math.round((feitos / obrig.length) * 100) + "%";
-  $("#cx-quando").textContent = c.onboarding_verificado_em ? "Última verificação: " + dataHora(c.onboarding_verificado_em) : (bm ? "Ainda não verificado." : "");
-  $("#cx-verificar").classList.toggle("hide", !bm);
   const copiar = `<button type="button" class="btn btn-fantasma btn-p" data-copiar="${ORBE_BM}">Copiar ID da Orbe</button>`;
-  const abrir = (pag, txt) => `<a class="btn btn-fantasma btn-p" href="${linkBM(pag, bm)}" target="_blank" rel="noopener">${txt}</a>`;
-  const compartilhar = (pag, rotulo, item) => `<ol><li>Abra <b>${rotulo}</b> e clique ${item}.</li><li>Na aba <b>Parceiros</b>, clique em <b>Atribuir parceiro</b> → <b>ID do portfólio empresarial</b>.</li><li>Cole o ID da Orbe (<b>${ORBE_BM}</b>) e marque <b>Controle total</b>.</li></ol>
+  const abrir = (pag, txt) => `<a class="btn btn-lima btn-p" href="${linkBM(pag, bm)}" target="_blank" rel="noopener">${txt}</a>`;
+  const compartilhar = (pag, rotulo, item) => `<ol><li>Toque em <b>Abrir ${rotulo}</b> e clique ${item}.</li><li>Na aba <b>Parceiros</b>: <b>Atribuir parceiro</b> → <b>ID do portfólio empresarial</b>.</li><li>Cole o ID da Orbe e marque <b>Controle total</b>.</li></ol>
     <div class="acoes-cx">${abrir(pag, "Abrir " + rotulo)}${copiar}</div>`;
-  const passos = [];
-  passos.push(passoCx(1, st.bm, "Informe seu portfólio empresarial",
-    bm ? `ID informado: <b>${esc(bm)}</b>${o.bm?.nome ? " (" + esc(o.bm.nome) + ")" : ""}.` : "É o número da sua empresa no Gerenciador de Negócios da Meta. Abra a página, copie o número em <b>Identificação do portfólio empresarial</b> e cole aqui.",
-    (bm && estado.papel !== "agencia") ? "" : `<div class="acoes-cx"><input class="campo" id="cx-bm" inputmode="numeric" placeholder="Ex.: 1234567890123456" value="${esc(bm || "")}">
-      <button type="button" class="btn btn-lima btn-p" id="cx-salvar-bm">${bm ? "Trocar" : "Salvar"}</button>${abrir("business_info", "Onde encontro?")}</div>`));
-  if (!propria) passos.push(passoCx(2, st.parceria, "Adicione a Orbe como parceira",
-    "Isso dá à Orbe acesso aos ativos que você escolher, sem precisar da sua senha.",
-    st.parceria ? "" : `<ol><li>Copie o ID da Orbe: <b>${ORBE_BM}</b></li><li>Em Parceiros, clique em <b>Adicionar</b> → <b>Conceder a um parceiro acesso aos seus ativos</b> e cole o ID.</li><li>Escolha os ativos dos próximos passos e marque <b>Controle total</b>.</li></ol>
-     <div class="acoes-cx">${copiar}${abrir("partners", "Abrir Parceiros")}</div>`));
-  passos.push(passoCx(3, st.pagina, "Página do Facebook",
-    "Para os anúncios saírem em nome da sua Página.",
-    lista((o.paginas || []).map((p) => p.nome), "Encontrada") + (st.pagina || propria ? "" : compartilhar("pages", "Páginas", "na Página da empresa"))));
-  passos.push(passoCx(4, st.insta, "Instagram",
-    "Para os anúncios aparecerem com o seu @. O Instagram precisa estar ligado à Página do Facebook.",
-    lista((o.instagram || []).map((p) => "@" + p.usuario), "Encontrado") + (st.insta || propria ? "" :
-      `<div class="acoes-cx" style="margin-bottom:8px"><input class="campo" id="cx-ig" placeholder="@suaempresa" value="${esc(c.ig_usuario ? "@" + c.ig_usuario : "")}">
-       <button type="button" class="btn btn-lima btn-p" id="cx-salvar-ig">${c.ig_usuario ? "Trocar @" : "Salvar @"}</button></div>
-       <p class="achados">Informe o @ e atribua a conta à Orbe. O painel confere se esse @ chegou.</p>` +
-      compartilhar("instagram_account", "Contas do Instagram", "na conta da empresa")), true));
-  passos.push(passoCx(5, st.conta, "Conta de anúncios",
-    "Onde as campanhas rodam e de onde vêm os números do painel.",
-    lista((o.contas || []).map((p) => p.nome + (p.ativa ? "" : " (desativada)")), "Encontrada") + (st.conta || propria ? "" : compartilhar("ad_accounts", "Contas de anúncios", "na conta que vai rodar os anúncios"))));
-  passos.push(passoCx(6, st.pixel, "Pixel (conjunto de dados)",
-    "Para a Meta saber quais anúncios trazem vendas.",
-    lista((o.pixels || []).map((p) => p.nome), "Encontrado") + (st.pixel || propria ? "" : compartilhar("events_dataset_and_pixel", "Conjuntos de dados e pixels", "no pixel da empresa") + `<p class="achados">Se o botão <b>Atribuir parceiro</b> estiver desativado, é uma trava da Meta para empresas novas: libera depois de algumas semanas. Pode pular este passo, porque ao conectar o WhatsApp o painel já cria o conjunto de dados das vendas.</p>`), true));
-  passos.push(passoCx(7, st.wa, "WhatsApp",
-    "Liga o WhatsApp Business ao painel: os contatos dos anúncios aparecem aqui sozinhos. Leva uns 5 minutos, com o celular da empresa em mãos.",
-    st.wa ? "" : `<div class="acoes-cx"><button type="button" class="btn btn-lima btn-p" id="cx-btn-wa">Conectar WhatsApp</button></div>`));
-  $("#cx-passos").innerHTML = passos.join("");
+  const L = [];
+  L.push({ k: "bm", feito: !!bm, titulo: "Seu portfólio empresarial",
+    texto: bm ? `Portfólio: <b>${esc(o.bm?.nome || bm)}</b>` : "Primeiro, me diga qual é a sua empresa na Meta. Abra a página, copie o número em <b>Identificação do portfólio empresarial</b> e cole aqui.",
+    corpo: (bm && estado.papel !== "agencia") ? "" : `<div class="acoes-cx"><input class="campo" id="cx-bm" inputmode="numeric" placeholder="Ex.: 1234567890123456" value="${esc(bm || "")}">
+      <button type="button" class="btn btn-roxo btn-p" id="cx-salvar-bm">${bm ? "Trocar" : "Salvar"}</button></div>
+      <div class="acoes-cx" style="margin-top:8px">${abrir("business_info", "Abrir minha empresa na Meta")}</div>` });
+  if (!propria) L.push({ k: "parceria", feito: !!o.parceria?.ok, titulo: "Adicione a Orbe como parceira",
+    texto: "Isso dá à Orbe acesso só ao que você escolher, sem precisar da sua senha.",
+    corpo: `<ol><li>Copie o ID da Orbe: <b>${ORBE_BM}</b></li><li>Em Parceiros: <b>Adicionar</b> → <b>Conceder a um parceiro acesso aos seus ativos</b>, cole o ID e confirme.</li></ol>
+      <div class="acoes-cx">${abrir("partners", "Abrir Parceiros")}${copiar}</div>` });
+  L.push({ k: "pagina", feito: (o.paginas || []).length > 0, titulo: "Página do Facebook",
+    texto: "Agora a Página da empresa, para os anúncios saírem em nome dela.",
+    achados: (o.paginas || []).map((p) => p.nome), corpo: propria ? "" : compartilhar("pages", "Páginas", "na Página da empresa") });
+  L.push({ k: "insta", opcional: true, feito: (o.instagram || []).length > 0, titulo: "Instagram",
+    texto: "Para os anúncios aparecerem com o seu @. Me diga o @ e atribua a conta à Orbe.",
+    achados: (o.instagram || []).map((p) => "@" + p.usuario),
+    corpo: propria ? "" : `<div class="acoes-cx" style="margin-bottom:8px"><input class="campo" id="cx-ig" placeholder="@suaempresa" value="${esc(c.ig_usuario ? "@" + c.ig_usuario : "")}">
+       <button type="button" class="btn btn-roxo btn-p" id="cx-salvar-ig">${c.ig_usuario ? "Trocar @" : "Salvar @"}</button></div>` + compartilhar("instagram_account", "Contas do Instagram", "na conta da empresa") });
+  L.push({ k: "conta", feito: (o.contas || []).length > 0, titulo: "Conta de anúncios",
+    texto: "Onde as campanhas rodam e de onde vêm os números do painel.",
+    achados: (o.contas || []).map((p) => p.nome + (p.ativa ? "" : " (desativada)")), corpo: propria ? "" : compartilhar("ad_accounts", "Contas de anúncios", "na conta que vai rodar os anúncios") });
+  L.push({ k: "pixel", opcional: true, feito: (o.pixels || []).length > 0, titulo: "Pixel (conjunto de dados)",
+    texto: "Para a Meta saber quais anúncios trazem vendas. Se o botão <b>Atribuir parceiro</b> estiver cinza, é uma trava da Meta para empresas novas: pode pular, o WhatsApp cria o conjunto de dados das vendas.",
+    achados: (o.pixels || []).map((p) => p.nome), corpo: propria ? "" : compartilhar("events_dataset_and_pixel", "Conjuntos de dados e pixels", "no pixel da empresa") });
+  L.push({ k: "wa", feito: !!c.wa_conectado, titulo: "WhatsApp",
+    texto: "Último passo: ligar o WhatsApp Business ao painel. Leva uns 5 minutos, com o celular da empresa em mãos.",
+    corpo: `<div class="acoes-cx"><button type="button" class="btn btn-lima btn-p" id="cx-btn-wa">Conectar WhatsApp</button></div>` });
+  return L;
 }
+function primeiroPendente(L) {
+  const i = L.findIndex((p) => !p.feito && !(p.opcional && estado.cxPulados?.has(p.k)));
+  return i === -1 ? L.length : i;
+}
+function desenharConexoes() {
+  const c = clienteAtual(); const L = passosConexoes(); if (!L) return;
+  estado.cxPulados ||= new Set();
+  if (estado.cxPasso == null || estado.cxPasso > L.length) estado.cxPasso = primeiroPendente(L);
+  const obrig = L.filter((p) => !p.opcional); const feitos = obrig.filter((p) => p.feito).length;
+  $("#cx-barra").style.width = Math.round((feitos / obrig.length) * 100) + "%";
+  $("#cx-verificar").classList.toggle("hide", !c.bm_id);
+  $("#cx-quando").textContent = c.onboarding_verificado_em ? "Última conferência: " + dataHora(c.onboarding_verificado_em) : "";
+  const pontos = `<div class="cx-pontos">${L.map((p, i) => `<i class="${i === estado.cxPasso ? "at" : p.feito ? "ok" : ""}"></i>`).join("")}</div>`;
+  if (estado.cxPasso >= L.length) {
+    const tudo = obrig.every((p) => p.feito);
+    $("#cx-resumo").textContent = tudo ? "Tudo conectado 🎉" : `${feitos} de ${obrig.length} obrigatórios`;
+    $("#cx-intro").classList.add("hide");
+    $("#cx-passos").innerHTML = pontos + (tudo
+      ? `<div class="cx feito"><div class="ic num">✓</div><div class="tx"><b>Pronto!</b><p>A Orbe já tem os acessos e os contatos dos anúncios vão aparecer aqui sozinhos. Dica: agora vale instalar o painel como app no celular.</p></div></div>`
+      : `<div class="cx"><div class="ic num">!</div><div class="tx"><b>Falta pouco</b><p>Ainda há passos obrigatórios pendentes: ${obrig.filter((p) => !p.feito).map((p) => esc(p.titulo)).join(", ")}.</p></div></div>`);
+    $("#cx-nav").innerHTML = `<button type="button" class="btn btn-fantasma btn-p" data-nav="voltar">← Voltar</button><span class="esp"></span>` +
+      (tudo ? `<button type="button" class="btn btn-lima btn-p" data-fechar>Concluir</button>` : `<button type="button" class="btn btn-roxo btn-p" data-nav="pendente">Ir para o que falta</button>`);
+    return;
+  }
+  const p = L[estado.cxPasso];
+  $("#cx-intro").classList.toggle("hide", estado.cxPasso > 0);
+  $("#cx-resumo").textContent = `Passo ${estado.cxPasso + 1} de ${L.length}`;
+  const achados = p.achados?.length ? `<p class="achados">Encontrado: ${p.achados.map(esc).join(", ")}</p>` : "";
+  $("#cx-passos").innerHTML = pontos + `<div class="cx${p.feito ? " feito" : ""}"><div class="ic num">${p.feito ? "✓" : estado.cxPasso + 1}</div><div class="tx">
+    <b>${p.titulo}${p.opcional ? ' <span class="sel-st">Opcional</span>' : ""}</b><p>${p.texto}</p>${achados}
+    ${p.feito ? `<div class="cx-ok">✓ Confirmado! Pode seguir.</div>` : p.corpo}</div></div>`;
+  const prox = p.feito
+    ? `<button type="button" class="btn btn-lima btn-p" data-nav="proximo">Próximo →</button>`
+    : p.opcional
+      ? `<button type="button" class="btn btn-fantasma btn-p" data-nav="pular">Pular este passo</button>`
+      : (p.k === "bm" ? "" : `<span class="cx-espera">Aguardando confirmação…</span>`);
+  $("#cx-nav").innerHTML = (estado.cxPasso > 0 ? `<button type="button" class="btn btn-fantasma btn-p" data-nav="voltar">← Voltar</button>` : "<span></span>") + `<span class="esp"></span>` + prox;
+}
+$("#cx-nav").addEventListener("click", (e) => {
+  const t = e.target.closest("[data-nav]"); if (!t) return;
+  const L = passosConexoes();
+  if (t.dataset.nav === "voltar") estado.cxPasso = Math.max(0, estado.cxPasso - 1);
+  if (t.dataset.nav === "proximo") estado.cxPasso = Math.min(L.length, estado.cxPasso + 1);
+  if (t.dataset.nav === "pular") { estado.cxPulados.add(L[estado.cxPasso].k); estado.cxPasso = Math.min(L.length, estado.cxPasso + 1); }
+  if (t.dataset.nav === "pendente") { estado.cxPulados.clear(); estado.cxPasso = primeiroPendente(L); }
+  desenharConexoes();
+  $("#modal-conexoes .modal").scrollTop = 0;
+});
 async function verificarConexoes(silencioso) {
   const c = clienteAtual(); if (!c?.bm_id) return;
   const b = $("#cx-verificar"); b.disabled = true; b.textContent = "Verificando…";
@@ -967,6 +1013,7 @@ document.addEventListener("visibilitychange", () => {
 });
 $("#btn-conexoes").addEventListener("click", () => {
   lembrarCx(estado.cliente);
+  estado.cxPasso = null;
   desenharConexoes(); iniciarCx();
   $("#modal-conexoes").classList.remove("hide");
   const c = clienteAtual();
