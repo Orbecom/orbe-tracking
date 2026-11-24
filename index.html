@@ -823,7 +823,7 @@ document.querySelectorAll(".aba").forEach((b) => b.addEventListener("click", () 
   recarregar();
 }));
 
-function recarregar() { atualizarAvisoWa(); if (estado.aba === "leads") carregarLeads(); else if (estado.aba === "painel") carregarPainel(); else carregarTabela(); }
+function recarregar() { atualizarAvisoWa(); reabrirConexoes(); if (estado.aba === "leads") carregarLeads(); else if (estado.aba === "painel") carregarPainel(); else carregarTabela(); }
 
 // ---------- Conexões: checklist de onboarding ----------
 const ORBE_BM = "1394199177728771";
@@ -937,7 +937,22 @@ $("#cx-passos").addEventListener("click", async (e) => {
     desenharConexoes(); verificarConexoes(false);
   }
 });
+// Celular: a pessoa sai para a Meta e volta. Ao voltar, confere de novo; se a página recarregou, reabre a janela.
+function lembrarCx(v) { try { v ? sessionStorage.setItem("orbe_cx", v) : sessionStorage.removeItem("orbe_cx"); } catch (_) {} }
+function reabrirConexoes() {
+  let v = null; try { v = sessionStorage.getItem("orbe_cx"); } catch (_) {}
+  if (v && v === estado.cliente && $("#modal-conexoes").classList.contains("hide")) $("#btn-conexoes").click();
+}
+new MutationObserver(() => { if ($("#modal-conexoes").classList.contains("hide")) lembrarCx(null); })
+  .observe($("#modal-conexoes"), { attributes: true, attributeFilter: ["class"] });
+let cxUltimaVolta = 0;
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible" || $("#modal-conexoes").classList.contains("hide")) return;
+  if (Date.now() - cxUltimaVolta < 5000) return;
+  cxUltimaVolta = Date.now(); verificarConexoes(true);
+});
 $("#btn-conexoes").addEventListener("click", () => {
+  lembrarCx(estado.cliente);
   desenharConexoes();
   $("#modal-conexoes").classList.remove("hide");
   const c = clienteAtual();
