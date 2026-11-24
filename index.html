@@ -951,13 +951,13 @@ function conectarFacebook(b) {
   if (!window.FB) { carregarFB().catch(() => {}); return toast("Carregando o login da Meta… clique de novo em 2 segundos.", 4000); }
   b.disabled = true;
   const opcoes = FB_CONFIG_PAGINAS
-    ? { config_id: FB_CONFIG_PAGINAS, response_type: "code", override_default_response_type: true }
-    : { scope: "pages_show_list,pages_manage_metadata", response_type: "code", override_default_response_type: true, auth_type: "rerequest" };
+    ? { config_id: FB_CONFIG_PAGINAS }
+    : { scope: "pages_show_list,pages_manage_metadata", auth_type: "rerequest" };
   FB.login((resp) => { (async () => {
-    const code = resp?.authResponse?.code;
-    if (!code) { b.disabled = false; return toast("Login cancelado.", 4000); }
+    const token = resp?.authResponse?.accessToken;
+    if (!token) { b.disabled = false; return toast("Login cancelado.", 4000); }
     $("#cx-fb").innerHTML = `<p class="nota">Carregando suas Páginas…</p>`;
-    const { data, error } = await sb.functions.invoke("conectar-pagina", { body: { acao: "listar", cliente: estado.cliente, code } });
+    const { data, error } = await sb.functions.invoke("conectar-pagina", { body: { acao: "listar", cliente: estado.cliente, token } });
     b.disabled = false;
     if (error || !data?.ok) { $("#cx-fb").innerHTML = ""; return toast((data?.erro || "Não foi possível listar as Páginas.") + (data?.detalhe ? " — " + data.detalhe : ""), 12000); }
     estado.fbSessao = data.sessao;
