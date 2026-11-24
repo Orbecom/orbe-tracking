@@ -781,7 +781,7 @@ $("#btn-tema").addEventListener("click", () => {
 async function abrirApp() {
   $("#tela-login").classList.add("hide"); $("#tela-app").classList.remove("hide");
   const [{ data: clientes }, { data: papel }] = await Promise.all([
-    sb.from("clientes").select("id, nome, ad_account_id, wa_conectado, metricas_sincronizadas_em, metricas_erro, tags, bm_id, onboarding, onboarding_verificado_em").order("nome"),
+    sb.from("clientes").select("id, nome, ad_account_id, wa_conectado, metricas_sincronizadas_em, metricas_erro, tags, bm_id, ig_usuario, onboarding, onboarding_verificado_em").order("nome"),
     sb.rpc("meu_papel"),
   ]);
   estado.clientes = clientes || []; estado.papel = papel || "cliente";
@@ -885,7 +885,11 @@ function desenharConexoes() {
     lista((o.paginas || []).map((p) => p.nome), "Encontrada") + (st.pagina || propria ? "" : compartilhar("pages", "Páginas", "na Página da empresa"))));
   passos.push(passoCx(4, st.insta, "Instagram",
     "Para os anúncios aparecerem com o seu @. O Instagram precisa estar ligado à Página do Facebook.",
-    lista((o.instagram || []).map((p) => "@" + p.usuario), "Encontrado") + (st.insta || propria ? "" : compartilhar("instagram_account", "Contas do Instagram", "na conta da empresa")), true));
+    lista((o.instagram || []).map((p) => "@" + p.usuario), "Encontrado") + (st.insta || propria ? "" :
+      `<div class="acoes-cx" style="margin-bottom:8px"><input class="campo" id="cx-ig" placeholder="@suaempresa" value="${esc(c.ig_usuario ? "@" + c.ig_usuario : "")}">
+       <button type="button" class="btn btn-lima btn-p" id="cx-salvar-ig">${c.ig_usuario ? "Trocar @" : "Salvar @"}</button></div>
+       <p class="achados">Informe o @ e atribua a conta à Orbe. O painel confere se esse @ chegou.</p>` +
+      compartilhar("instagram_account", "Contas do Instagram", "na conta da empresa")), true));
   passos.push(passoCx(5, st.conta, "Conta de anúncios",
     "Onde as campanhas rodam e de onde vêm os números do painel.",
     lista((o.contas || []).map((p) => p.nome + (p.ativa ? "" : " (desativada)")), "Encontrada") + (st.conta || propria ? "" : compartilhar("ad_accounts", "Contas de anúncios", "na conta que vai rodar os anúncios"))));
@@ -914,6 +918,14 @@ $("#cx-passos").addEventListener("click", async (e) => {
   if (t.dataset.copiar) {
     try { await navigator.clipboard.writeText(t.dataset.copiar); toast("ID da Orbe copiado"); } catch (_) { toast("Copie o ID: " + t.dataset.copiar, 6000); }
     return;
+  }
+  if (t.id === "cx-salvar-ig") {
+    t.disabled = true;
+    const { error } = await sb.rpc("definir_ig_usuario", { p_cliente: estado.cliente, p_usuario: $("#cx-ig").value });
+    t.disabled = false;
+    if (error) return toast(error.message, 6000);
+    clienteAtual().ig_usuario = $("#cx-ig").value.replace(/[^A-Za-z0-9._]/g, "").toLowerCase();
+    return verificarConexoes(false);
   }
   if (t.id === "cx-salvar-bm") {
     const v = $("#cx-bm").value.trim();
@@ -1780,7 +1792,7 @@ $("#btn-sync").addEventListener("click", async (e) => {
   if (error || !r?.ok) { toast(r?.erro || error?.message || "Erro ao atualizar"); return; }
   const erros = (r.clientes || []).filter((x) => x.erro);
   toast(erros.length ? `Erro em ${erros[0].cliente}: ${erros[0].erro}` : "Métricas atualizadas ✓", erros.length ? 6000 : 3200);
-  const { data } = await sb.from("clientes").select("id, nome, ad_account_id, wa_conectado, metricas_sincronizadas_em, metricas_erro, tags, bm_id, onboarding, onboarding_verificado_em").order("nome");
+  const { data } = await sb.from("clientes").select("id, nome, ad_account_id, wa_conectado, metricas_sincronizadas_em, metricas_erro, tags, bm_id, ig_usuario, onboarding, onboarding_verificado_em").order("nome");
   estado.clientes = data || estado.clientes;
   carregarPainel();
 });
