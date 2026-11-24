@@ -548,6 +548,13 @@ tfoot tr[style] td{font-weight:400;background:transparent}
       <button class="fechar" type="button" data-fechar aria-label="Fechar">×</button>
     </div>
     <p>Siga os passos para liberar os acessos que a Orbe precisa. Cada botão abre o lugar certo na Meta, e o painel confere sozinho se deu certo.</p>
+    <div class="cx hide" id="cx-aviso-cel" style="border-color:var(--roxo);margin:0 0 12px">
+      <div class="ic" aria-hidden="true">💻</div>
+      <div class="tx"><b>Melhor fazer pelo computador</b>
+        <p>No celular, a Meta pede login de novo e as telas de configuração ficam pequenas, às vezes sem as opções necessárias. Abra o painel no computador, entre com o mesmo e-mail e siga os passos por lá. O WhatsApp é o único passo que funciona bem no celular.</p>
+        <div class="acoes-cx"><button type="button" class="btn btn-fantasma btn-p" data-copiar="https://tracking.orbemedia.com.br">Copiar link do painel</button></div>
+      </div>
+    </div>
     <div class="cx-topo">
       <b id="cx-resumo">—</b>
       <button type="button" class="btn btn-roxo btn-p" id="cx-verificar">Verificar agora</button>
@@ -912,6 +919,10 @@ async function verificarConexoes(silencioso) {
   if (!silencioso) toast(data.completo ? "Tudo certo! Conexões concluídas." : "Verificação concluída");
 }
 $("#cx-verificar").addEventListener("click", () => verificarConexoes(false));
+$("#cx-aviso-cel").addEventListener("click", async (e) => {
+  const t = e.target.closest("[data-copiar]"); if (!t) return;
+  try { await navigator.clipboard.writeText(t.dataset.copiar); toast("Link copiado"); } catch (_) { toast("Abra no computador: " + t.dataset.copiar, 6000); }
+});
 $("#cx-passos").addEventListener("click", async (e) => {
   const t = e.target.closest("button"); if (!t) return;
   if (t.id === "cx-btn-wa") return conectarWa(t, "Conectar WhatsApp");
@@ -967,6 +978,8 @@ document.addEventListener("visibilitychange", () => {
 });
 $("#btn-conexoes").addEventListener("click", () => {
   lembrarCx(estado.cliente);
+  const celular = matchMedia("(pointer: coarse)").matches && innerWidth < 900;
+  $("#cx-aviso-cel").classList.toggle("hide", !celular || !!clienteAtual()?.onboarding?.completo);
   desenharConexoes(); iniciarCx();
   $("#modal-conexoes").classList.remove("hide");
   const c = clienteAtual();
