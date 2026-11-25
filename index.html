@@ -18,6 +18,7 @@
 .fb-res{list-style:none;padding:0;margin:8px 0;display:grid;gap:4px}
 .fb-res li.ok{color:#1a8a4a}.fb-res li.erro{color:#c0392b}
 .cx-manual{margin-top:10px}.cx-manual summary{cursor:pointer;opacity:.8}
+.cx-lbl{display:flex;flex-direction:column;gap:4px;font-size:13px;margin:8px 0}.cx-lbl select{width:100%}
 </style>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -631,6 +632,16 @@ const EN = {
   "Ir para o que falta": "Go to what's missing", "Concluir": "Finish", "Falta pouco": "Almost there", "Pronto!": "Done!",
   "Tudo conectado 🎉": "All connected 🎉", "Login cancelado.": "Login canceled.", "Verificação concluída": "Check complete",
   "Nenhuma Página encontrada nesse perfil.": "No Pages found on this profile.",
+  "Conectar com a Meta": "Connect with Meta", "Lendo sua conta da Meta…": "Reading your Meta account…",
+  "Entre com o Facebook e escolha a empresa, a Página, a conta de anúncios e o pixel. Eu dou o acesso de parceiro à Orbe em cada um, sem você abrir o Gerenciador de Negócios.": "Log in with Facebook and choose your business, Page, ad account and pixel. The app grants the agency partner access to each one, without opening Business Manager.",
+  "Empresa (portfólio)": "Business (portfolio)", "Escolha a empresa…": "Choose the business…", "Escolha a Página…": "Choose the Page…",
+  "Conta de anúncios": "Ad account", "Pixel (opcional)": "Pixel (optional)", "Nenhuma": "None", "Nenhum": "None",
+  "Nenhuma conta encontrada": "No ad account found", "Nenhum pixel encontrado": "No pixel found",
+  "Buscando contas de anúncios e pixels…": "Loading ad accounts and pixels…", "Conectar tudo": "Connect all", "Conectando…": "Connecting…",
+  "Portfólio salvo": "Portfolio saved", "Orbe Media adicionada como parceira da Página": "Orbe Media added as a partner of the Page",
+  "Pixel compartilhado com a Orbe Media": "Pixel shared with Orbe Media", "Refazer conexão": "Connect again",
+  "O que deu ✗ pode ser feito pelos passos seguintes, do jeito manual.": "Anything marked ✗ can be done manually in the next steps.",
+  "Prefere fazer manualmente? Clique em": "Prefer to do it manually? Click", "Pular": "Skip", "e siga os próximos passos.": "and follow the next steps.",
   "Isso dá à Orbe acesso só ao que você escolher, sem precisar da sua senha.": "This gives Orbe access only to what you choose, without needing your password.",
   "Copie o ID da Orbe:": "Copy Orbe's ID:", "Em Parceiros:": "In Partners:",
   "Adicionar → Conceder a um parceiro acesso aos seus ativos": "Add → Give a partner access to your assets",
@@ -646,6 +657,8 @@ const EN_RE = [
   [/^Encontrado: (.*)$/, "Found: $1"], [/^Instagram: (.*)$/, "Instagram: $1"],
   [/^(\d+) de (\d+) obrigatórios$/, "$1 of $2 required"],
   [/^Página (.*) inscrita no webhook \(campos: (.*)\)$/, "Page $1 subscribed to webhook (fields: $2)"],
+  [/^Página (.*) conectada \(webhook: (.*)\)$/, "Page $1 connected (webhook: $2)"],
+  [/^Conta de anúncios (.*) liberada para a Orbe Media$/, "Ad account $1 shared with Orbe Media"],
 ];
 function traduzir(t) {
   const k = t.trim(); if (!k) return t;
@@ -1011,6 +1024,77 @@ function iniciarEventos(pageId) {
   };
   ler(); evTimer = setInterval(ler, 5000);
 }
+
+// ---------- Conexão única com a Meta (login → empresa, Página, conta de anúncios e pixel) ----------
+// Até a Meta aprovar pages_show_list/pages_manage_metadata, só contas com função no app conseguem usar: mostra só para a agência.
+const META_LOGIN_LIBERADO = false;
+function metaVisivel() { return META_LOGIN_LIBERADO || estado.papel === "agencia"; }
+function conectarMeta(b) {
+  if (!window.FB) { carregarFB().catch(() => {}); return toast("Carregando o login da Meta… clique de novo em 2 segundos.", 4000); }
+  b.disabled = true;
+  FB.login((resp) => { (async () => {
+    const token = resp?.authResponse?.accessToken;
+    if (!token) { b.disabled = false; return toast("Login cancelado.", 4000); }
+    estado.meta = { carregando: true }; desenharConexoes();
+    const { data, error } = await sb.functions.invoke("conectar-meta", { body: { acao: "listar", cliente: estado.cliente, token } });
+    if (error || !data?.ok) { estado.meta = null; desenharConexoes(); return toast((data?.erro || "Não foi possível ler sua conta da Meta.") + (data?.detalhe ? " — " + data.detalhe : ""), 12000); }
+    estado.meta = { sessao: data.sessao, empresas: data.empresas, paginas: data.paginas, bm: data.empresas.length === 1 ? data.empresas[0].id : "", page: data.paginas.length === 1 ? data.paginas[0].id : "" };
+    if (estado.meta.bm) await carregarAtivosMeta();
+    desenharConexoes();
+  })(); }, { scope: "pages_show_list,pages_manage_metadata,business_management", auth_type: "rerequest" });
+}
+async function carregarAtivosMeta() {
+  const m = estado.meta; if (!m?.bm) return;
+  m.ativos = null; m.carregandoAtivos = true; desenharConexoes();
+  const { data } = await sb.functions.invoke("conectar-meta", { body: { acao: "ativos", sessao: m.sessao, bm: m.bm } });
+  m.carregandoAtivos = false;
+  m.ativos = data?.ok ? data : { contas: [], pixels: [], paginas_da_empresa: [], avisos: [data?.erro || "erro"] };
+  // Pré-seleciona: Página da empresa, primeira conta ativa e o único pixel
+  if (!m.page) m.page = (m.paginas.find((p) => m.ativos.paginas_da_empresa.includes(String(p.id))) || {}).id || "";
+  m.conta = (m.ativos.contas.find((c) => c.ativa) || m.ativos.contas[0] || {}).id || "";
+  m.pixel = m.ativos.pixels.length === 1 ? m.ativos.pixels[0].id : "";
+  desenharConexoes();
+}
+function htmlMeta() {
+  const m = estado.meta;
+  if (!m) return `<div class="acoes-cx"><button type="button" class="btn btn-fb btn-p" id="cx-btn-meta">Conectar com o Facebook</button></div>`;
+  if (m.carregando) return `<p class="nota">Lendo sua conta da Meta…</p>`;
+  if (m.resultado) {
+    const r = m.resultado.passos; const st = (ok, txt) => `<li class="${ok ? "ok" : "erro"}"><span>${ok ? "✓" : "✗"}</span> ${txt}</li>`;
+    const itens = [];
+    if (r.bm) itens.push(st(r.bm.ok, r.bm.ok ? "Portfólio salvo" : "Portfólio: " + esc(r.bm.erro)));
+    if (r.pagina) itens.push(st(r.pagina.ok && r.webhook?.ok, r.pagina.ok ? `Página ${esc(r.pagina.nome || "")} conectada (webhook: ${esc((r.webhook?.campos || []).join(", ") || "—")})` : esc(r.pagina.erro)));
+    if (r.parceiro) itens.push(st(r.parceiro.ok, r.parceiro.ok ? "Orbe Media adicionada como parceira da Página" : "Parceria da Página: " + esc(r.parceiro.erro || "")));
+    (r.contas || []).forEach((c) => itens.push(st(c.ok, c.ok ? `Conta de anúncios ${esc(c.id)} liberada para a Orbe Media` : `Conta ${esc(c.id)}: ${esc(c.erro || "")}`)));
+    if (r.pixel) itens.push(st(r.pixel.ok, r.pixel.ok ? "Pixel compartilhado com a Orbe Media" : "Pixel: " + esc(r.pixel.erro || "")));
+    const falhou = Object.values(r).flat().some((x) => x && x.ok === false);
+    return `<ul class="fb-res">${itens.join("")}</ul>` + (falhou ? `<p class="nota">O que deu ✗ pode ser feito pelos passos seguintes, do jeito manual.</p>` : "") +
+      `<div class="acoes-cx"><button type="button" class="btn btn-fantasma btn-p" id="cx-meta-refazer">Refazer conexão</button></div>`;
+  }
+  const opt = (lista, sel, vazio) => (vazio ? `<option value="">${vazio}</option>` : "") + lista.map((x) => `<option value="${esc(x.id)}"${String(x.id) === String(sel) ? " selected" : ""}>${esc(x.nome)}${x.ativa === false ? " (desativada)" : ""}</option>`).join("");
+  let h = `<label class="cx-lbl">Empresa (portfólio)<select class="campo" id="cx-meta-bm">${opt(m.empresas, m.bm, "Escolha a empresa…")}</select></label>`;
+  h += `<label class="cx-lbl">Página do Facebook<select class="campo" id="cx-meta-page">${opt(m.paginas, m.page, "Escolha a Página…")}</select></label>`;
+  if (m.carregandoAtivos) h += `<p class="nota">Buscando contas de anúncios e pixels…</p>`;
+  else if (m.ativos) {
+    h += `<label class="cx-lbl">Conta de anúncios<select class="campo" id="cx-meta-conta">${opt(m.ativos.contas, m.conta, m.ativos.contas.length ? "Nenhuma" : "Nenhuma conta encontrada")}</select></label>`;
+    h += `<label class="cx-lbl">Pixel (opcional)<select class="campo" id="cx-meta-pixel">${opt(m.ativos.pixels, m.pixel, m.ativos.pixels.length ? "Nenhum" : "Nenhum pixel encontrado")}</select></label>`;
+  }
+  h += `<div class="acoes-cx"><button type="button" class="btn btn-lima btn-p" id="cx-meta-ok"${m.bm && m.page && !m.enviando ? "" : " disabled"}>${m.enviando ? "Conectando…" : "Conectar tudo"}</button></div>`;
+  return h;
+}
+async function concluirMeta() {
+  const m = estado.meta; m.enviando = true; desenharConexoes();
+  const { data, error } = await sb.functions.invoke("conectar-meta", { body: { acao: "conectar", sessao: m.sessao, bm: m.bm, page_id: m.page, contas: m.conta ? [m.conta] : [], pixel: m.pixel || "" } });
+  m.enviando = false;
+  if (error || !data?.passos) { desenharConexoes(); return toast(data?.erro || "Não foi possível concluir a conexão.", 8000); }
+  m.resultado = data;
+  const c = clienteAtual();
+  if (data.passos.bm?.ok) { c.bm_id = String(m.bm); }
+  if (data.passos.gravar?.ok) c.page_id = String(m.page);
+  estado.fbResultado = data.pagina ? { pagina: data.pagina, passos: { webhook: data.passos.webhook || { ok: false }, parceiro: data.passos.parceiro || { ok: false }, gravar: data.passos.gravar || { ok: false } } } : null;
+  desenharConexoes();
+  verificarConexoes(true);
+}
 function passosConexoes() {
   const c = clienteAtual(); if (!c) return null;
   const o = c.onboarding || {}; const bm = c.bm_id;
@@ -1020,6 +1104,12 @@ function passosConexoes() {
   const compartilhar = (pag, rotulo, item) => `<ol><li>Toque em <b>Abrir ${rotulo}</b> e clique ${item}.</li><li>Na aba <b>Parceiros</b>: <b>Atribuir parceiro</b> → <b>ID do portfólio empresarial</b>.</li><li>Cole o ID da Orbe e marque <b>Controle total</b>.</li></ol>
     <div class="acoes-cx">${abrir(pag, "Abrir " + rotulo)}${copiar}</div>`;
   const L = [];
+  if (metaVisivel()) {
+    const metaOk = !!(bm && o.parceria?.ok !== false && (o.paginas || []).length && (o.contas || []).length) || !!estado.meta?.resultado;
+    L.push({ k: "meta", feito: metaOk, titulo: "Conectar com a Meta",
+      texto: "Entre com o Facebook e escolha a empresa, a Página, a conta de anúncios e o pixel. Eu dou o acesso de parceiro à Orbe em cada um, sem você abrir o Gerenciador de Negócios.",
+      corpo: `<div id="cx-meta">${htmlMeta()}</div><p class="nota">Prefere fazer manualmente? Clique em <b>Pular</b> e siga os próximos passos.</p>`, opcional: true });
+  }
   L.push({ k: "bm", feito: !!bm, titulo: "Seu portfólio empresarial",
     texto: bm ? `Portfólio: <b>${esc(o.bm?.nome || bm)}</b>` : "Primeiro, me diga qual é a sua empresa na Meta. Abra a página, copie o número em <b>Identificação do portfólio empresarial</b> e cole aqui.",
     corpo: (bm && estado.papel !== "agencia") ? "" : `<div class="acoes-cx"><input class="campo" id="cx-bm" inputmode="numeric" placeholder="Ex.: 1234567890123456" value="${esc(bm || "")}">
@@ -1080,13 +1170,13 @@ function desenharConexoes() {
   const achados = p.achados?.length ? `<p class="achados">Encontrado: ${p.achados.map(esc).join(", ")}</p>` : "";
   $("#cx-passos").innerHTML = pontos + `<div class="cx${p.feito ? " feito" : ""}"><div class="ic num">${p.feito ? "✓" : estado.cxPasso + 1}</div><div class="tx">
     <b>${p.titulo}${p.opcional ? ' <span class="sel-st">Opcional</span>' : ""}</b><p>${p.texto}</p>${achados}
-    ${p.feito ? `<div class="cx-ok">✓ Confirmado! Pode seguir.</div>` + (p.k === "pagina" ? `<div class="acoes-cx"><button type="button" class="btn btn-fb btn-p" id="cx-btn-fb">Conectar com o Facebook</button></div><div id="cx-fb"></div>` : "") : p.corpo}</div></div>`;
+    ${p.feito ? `<div class="cx-ok">✓ Confirmado! Pode seguir.</div>` + (p.k === "meta" ? `<div id="cx-meta">${htmlMeta()}</div>` : "") + (p.k === "pagina" ? `<div class="acoes-cx"><button type="button" class="btn btn-fb btn-p" id="cx-btn-fb">Conectar com o Facebook</button></div><div id="cx-fb"></div>` : "") : p.corpo}</div></div>`;
   const prox = p.feito
     ? `<button type="button" class="btn btn-lima btn-p" data-nav="proximo">Próximo →</button>`
     : p.opcional
       ? `<button type="button" class="btn btn-fantasma btn-p" data-nav="pular">Pular este passo</button>`
       : (p.k === "bm" ? "" : `<span class="cx-espera">Aguardando confirmação…</span>`);
-  if (p.k === "pagina") carregarFB().catch(() => {});
+  if (p.k === "pagina" || p.k === "meta") carregarFB().catch(() => {});
   if (p.k === "pagina" && $("#cx-fb") && estado.fbSessao && !estado.fbResultado && estado.fbLista) {
     $("#cx-fb").innerHTML = estado.fbLista;
   } else if (p.k === "pagina" && c.page_id && $("#cx-fb")) {
@@ -1116,10 +1206,21 @@ async function verificarConexoes(silencioso) {
   if (!silencioso) toast(data.completo ? "Tudo certo! Conexões concluídas." : "Verificação concluída");
 }
 $("#cx-verificar").addEventListener("click", () => verificarConexoes(false));
+$("#cx-passos").addEventListener("change", (e) => {
+  const m = estado.meta; if (!m) return;
+  const id = e.target.id, v = e.target.value;
+  if (id === "cx-meta-bm") { m.bm = v; m.ativos = null; if (v) carregarAtivosMeta(); else desenharConexoes(); }
+  if (id === "cx-meta-page") { m.page = v; desenharConexoes(); }
+  if (id === "cx-meta-conta") m.conta = v;
+  if (id === "cx-meta-pixel") m.pixel = v;
+});
 $("#cx-passos").addEventListener("click", async (e) => {
   const t = e.target.closest("button"); if (!t) return;
   if (t.id === "cx-btn-wa") return conectarWa(t, "Conectar WhatsApp");
   if (t.id === "cx-btn-fb") return conectarFacebook(t);
+  if (t.id === "cx-btn-meta") return conectarMeta(t);
+  if (t.id === "cx-meta-ok") return concluirMeta();
+  if (t.id === "cx-meta-refazer") { estado.meta = null; return desenharConexoes(); }
   if (t.classList.contains("fb-pg")) return escolherPagina(t);
   if (t.dataset.copiar) {
     try { await navigator.clipboard.writeText(t.dataset.copiar); toast("ID da Orbe copiado"); } catch (_) { toast("Copie o ID: " + t.dataset.copiar, 6000); }
