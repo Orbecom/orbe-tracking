@@ -609,9 +609,9 @@ tfoot tr[style] td{font-weight:400;background:transparent}
 // ---------- Modo em inglês (?lang=en) — usado na gravação para a análise da Meta ----------
 const LANG_EN = (() => {
   try {
-    const q = new URLSearchParams(location.search).get("lang");
-    if (q) localStorage.setItem("orbe-lang", q);
-    return (q || localStorage.getItem("orbe-lang")) === "en";
+    // Inglês só com ?lang=en no endereço (usado nas gravações para a Meta); sem isso, sempre português
+    localStorage.removeItem("orbe-lang");
+    return new URLSearchParams(location.search).get("lang") === "en";
   } catch (_) { return false; }
 })();
 const EN = {
