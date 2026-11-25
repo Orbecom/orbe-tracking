@@ -1135,7 +1135,7 @@ function passosConexoes() {
       achados: (o.contas || []).map((x) => x.nome + (x.ativa ? "" : " (desativada)")),
       corpo: compartilhar("ad_accounts", "Contas de anúncios", "na conta (ou crie uma em Adicionar)") });
     L.push({ k: "wa", feito: !!c.wa_conectado, titulo: "WhatsApp",
-      texto: "Por último, ligue o WhatsApp Business ao painel. Leva uns 5 minutos, com o celular da empresa em mãos.",
+      texto: "Por último, ligue o WhatsApp Business ao painel. Leva uns 5 minutos.<br><b>Antes de clicar:</b> o número precisa estar no app <b>WhatsApp Business</b> (se usa o WhatsApp comum, migre pelo próprio app do Business, as conversas são mantidas) e tenha o celular da empresa em mãos para ler o QR code da Meta. Você continua usando o app normalmente.",
       corpo: `<div class="acoes-cx"><button type="button" class="btn btn-lima btn-p" id="cx-btn-wa">Conectar WhatsApp</button></div>` });
     return L;
   }
