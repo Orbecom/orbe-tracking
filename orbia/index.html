@@ -104,6 +104,7 @@ h1.titulo{font-family:"Etna","Archivo Black",sans-serif;font-weight:400;font-siz
       <div class="card">
         <h3>Conta de IA (OpenRouter)</h3>
         <p id="v-chave" class="nota">—</p>
+        <div id="v-saldo" class="aviso erro hide"></div>
         <div class="linha">
           <button class="btn btn-roxo" id="btn-oauth">Conectar OpenRouter</button>
           <button class="btn btn-f agencia" id="btn-remover">Remover conta</button>
@@ -220,6 +221,15 @@ async function carregar() {
   $("#v-chave").textContent = !st.chave ? "Nenhuma conta conectada." :
     (st.chave.origem === "cliente" ? "Conectada: conta do cliente" : "Conectada: conta da Orbe") + " desde " + quando(st.chave.desde) + ".";
   $("#btn-remover").classList.toggle("hide", estado.papel !== "agencia" || !st.chave);
+  // Aviso de saldo: conta do cliente sem crédito (ou teto da chave atingido)
+  const av = $("#v-saldo"); let msg = "";
+  if (st.chave?.origem === "cliente") {
+    if (u?.erro) msg = "A conta do OpenRouter não respondeu. Pode estar sem crédito ou a conexão foi removida.";
+    else if (u?.saldo != null && u.saldo < 0.5) msg = `Saldo do OpenRouter acabando (US$ ${Number(u.saldo).toFixed(2)}). Sem crédito, a Orbia responde só pela reserva gratuita, que é mais lenta.`;
+    else if (u?.restante != null && u.restante <= 0) msg = "O limite de gasto definido no OpenRouter foi atingido neste mês.";
+  }
+  av.innerHTML = msg ? esc(msg) + ' <a href="https://openrouter.ai/settings/credits" target="_blank" rel="noopener"><b>Colocar crédito</b></a>' : "";
+  av.classList.toggle("hide", !msg);
 }
 async function acao(rpc, args, ok) {
   const { error } = await sb.rpc(rpc, args);
