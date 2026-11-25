@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbia · Painel</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+:root{--preto:#0B0712;--roxo-esc:#2F1C47;--roxo:#7A33FE;--lima:#C5FC37;--txt:#F6F2FF;--txt2:#9C93B0;--card:#160E22;--borda:#2a1d3d;--ok:#5fd38d;--erro:#ff7676}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Open Sans",system-ui,sans-serif;background:var(--preto);color:var(--txt);min-height:100vh}
+h1,h2,.marca{font-family:"Archivo Black",sans-serif;letter-spacing:.2px}
+a{color:var(--lima)}
+.hide{display:none!important}
+.wrap{max-width:1100px;margin:0 auto;padding:20px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:16px 20px;border-bottom:1px solid var(--borda);position:sticky;top:0;background:rgba(11,7,18,.92);backdrop-filter:blur(8px);z-index:5}
+.marca{font-size:20px}.marca span{color:var(--roxo)}
+.esp{flex:1}
+select,input,textarea{background:var(--card);color:var(--txt);border:1px solid var(--borda);border-radius:10px;padding:10px 12px;font:inherit}
+textarea{width:100%;min-height:90px}
+.btn{border:0;border-radius:999px;padding:10px 18px;font-weight:700;cursor:pointer;font:inherit;font-weight:700}
+.btn-lima{background:var(--lima);color:#111}.btn-roxo{background:var(--roxo);color:#fff}.btn-f{background:transparent;color:var(--txt);border:1px solid var(--borda)}
+.btn:disabled{opacity:.5;cursor:default}
+.grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:18px 0}
+.card{background:var(--card);border:1px solid var(--borda);border-radius:18px;padding:18px}
+.card h3{margin:0 0 6px;font-size:13px;color:var(--txt2);font-weight:600;text-transform:uppercase;letter-spacing:.8px}
+.num{font-size:30px;font-weight:700}
+.barra{height:8px;background:var(--borda);border-radius:99px;overflow:hidden;margin-top:10px}.barra i{display:block;height:100%;background:var(--lima)}
+.nota{color:var(--txt2);font-size:13px}
+.linha{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.pilula{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700}
+.p-bot{background:#2b1b4a;color:#c9a8ff}.p-hum{background:#3a3214;color:#ffd76a}.p-ok{background:#16351f;color:var(--ok)}.p-off{background:#3a1717;color:var(--erro)}
+.lista{display:flex;flex-direction:column;gap:8px}
+.conv{display:flex;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--borda);border-radius:14px;cursor:pointer;background:var(--card)}
+.conv:hover{border-color:var(--roxo)}
+.conv b{flex:1}
+.chat{display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow:auto;padding:4px}
+.msg{max-width:80%;padding:10px 12px;border-radius:14px;white-space:pre-wrap;font-size:14px}
+.msg.cliente{align-self:flex-start;background:#221735}.msg.orbia{align-self:flex-end;background:var(--roxo-esc);border:1px solid var(--roxo)}
+.login{max-width:380px;margin:12vh auto;padding:28px}
+.login input{width:100%;margin:6px 0 12px}
+.aviso{padding:10px 12px;border-radius:10px;background:#2a1d3d;font-size:14px;margin:10px 0}.aviso.erro{background:#3a1717}
+.abas{display:flex;gap:6px;margin-top:6px}.aba{background:transparent;border:0;color:var(--txt2);font:inherit;font-weight:700;padding:8px 12px;border-radius:10px;cursor:pointer}.aba.ativa{background:var(--card);color:var(--txt)}
+.campo-f{display:flex;flex-direction:column;gap:6px;font-size:14px;margin:10px 0}.campo-f input,.campo-f select{width:100%}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--roxo);color:#fff;padding:12px 18px;border-radius:12px;z-index:9}
+.fundo{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px;z-index:8}
+.modal{background:var(--preto);border:1px solid var(--borda);border-radius:18px;padding:18px;width:min(640px,100%);max-height:90vh;overflow:auto}
+</style>
+</head>
+<body>
+<section id="tela-login" class="hide">
+  <div class="card login">
+    <div class="marca">orb<span>ia</span></div>
+    <p class="nota">Painel da atendente virtual. Use o mesmo e-mail e senha do Orbe Tracking.</p>
+    <form id="form-login">
+      <input id="email" type="email" placeholder="E-mail" autocomplete="email" required>
+      <input id="senha" type="password" placeholder="Senha" autocomplete="current-password" required>
+      <button class="btn btn-lima" style="width:100%">Entrar</button>
+    </form>
+    <div id="login-aviso" class="aviso hide"></div>
+  </div>
+</section>
+
+<section id="tela-app" class="hide">
+  <header>
+    <div class="marca">orb<span>ia</span></div>
+    <select id="sel-cliente" aria-label="Cliente"></select>
+    <span class="esp"></span>
+    <a class="nota" href="/" target="_blank" rel="noopener">Abrir Orbe Tracking</a>
+    <button class="btn btn-f" id="btn-sair">Sair</button>
+  </header>
+  <div class="wrap">
+    <nav class="abas">
+      <button class="aba ativa" data-aba="visao">Visão geral</button>
+      <button class="aba" data-aba="instrucoes">Instruções da Orbia</button>
+    </nav>
+
+    <div id="aba-visao">
+      <div class="grade">
+        <div class="card">
+          <h3>Orbia</h3>
+          <div class="num" id="v-status">—</div>
+          <div class="linha"><button class="btn btn-roxo" id="btn-ativa">—</button></div>
+        </div>
+        <div class="card">
+          <h3>Conversas no mês</h3>
+          <div class="num"><span id="v-conv">—</span> <span class="nota">de <span id="v-lim">—</span></span></div>
+          <div class="barra"><i id="v-barra" style="width:0"></i></div>
+          <p class="nota">Passou do limite, as conversas novas ficam com o atendimento humano até virar o mês.</p>
+          <div class="linha agencia"><input id="in-lim" type="number" min="0" step="50" style="width:120px"><button class="btn btn-f" id="btn-lim">Salvar limite</button></div>
+        </div>
+        <div class="card">
+          <h3>Gasto de IA no mês</h3>
+          <div class="num" id="v-gasto">—</div>
+          <p class="nota" id="v-conta">—</p>
+          <div class="linha agencia" id="caixa-teto"><span class="nota">Teto US$</span><input id="in-teto" type="number" min="0.5" step="0.5" style="width:100px"><button class="btn btn-f" id="btn-teto">Salvar teto</button></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Conta de IA (OpenRouter)</h3>
+        <p id="v-chave" class="nota">—</p>
+        <div class="linha">
+          <button class="btn btn-lima" id="btn-oauth">Conectar OpenRouter</button>
+          <button class="btn btn-roxo agencia" id="btn-chave-orbe">Usar conta da Orbe (com teto)</button>
+          <button class="btn btn-f agencia" id="btn-remover">Remover conta</button>
+        </div>
+        <p class="nota">Conta do cliente: o gasto vai para o cartão dele no OpenRouter. Conta da Orbe: sai do saldo da agência, limitado pelo teto mensal.</p>
+      </div>
+    </div>
+
+    <div id="aba-instrucoes" class="hide">
+      <p class="nota" style="margin:16px 0 4px">Conte como a sua empresa atende. A Orbia usa estas respostas para conversar com os seus clientes no WhatsApp. Ao salvar, a Orbia já passa a responder com estas informações.</p>
+      <p class="nota" id="i-status"></p>
+      <form id="form-inst" class="lista" style="gap:14px;margin-top:12px">
+        <div class="card"><h3>1. Sua empresa</h3>
+          <label class="campo-f">Nome da empresa<input name="empresa"></label>
+          <label class="campo-f">O que vende ou qual serviço oferece<textarea name="oque"></textarea></label>
+          <label class="campo-f">Cidade e região que atende<input name="regiao"></label>
+          <label class="campo-f">Endereço da loja (se tiver)<input name="endereco"></label>
+          <label class="campo-f">Horário de atendimento<input name="horario" placeholder="Ex.: seg a sex, 9h às 18h; sáb 9h às 13h"></label>
+        </div>
+        <div class="card"><h3>2. Produtos e preços</h3>
+          <label class="campo-f">Principais produtos ou serviços e faixa de preço<textarea name="produtos" placeholder="Um por linha. Ex.: Pastilha de freio dianteira — a partir de R$ 120"></textarea></label>
+          <label class="campo-f">A Orbia pode passar preço?<select name="preco"><option value="sim">Sim, pode passar os preços</option><option value="faixa">Só a faixa de preço</option><option value="nao">Não, o preço é com o vendedor</option></select></label>
+          <label class="campo-f">Formas de pagamento e parcelamento<input name="pagamento"></label>
+          <label class="campo-f">Entrega, frete ou retirada<input name="entrega"></label>
+        </div>
+        <div class="card"><h3>3. Perguntas frequentes</h3>
+          <label class="campo-f">As dúvidas mais comuns e a resposta certa<textarea name="faq" style="min-height:140px" placeholder="P: Vocês têm garantia?&#10;R: Sim, 3 meses em todas as peças."></textarea></label>
+        </div>
+        <div class="card"><h3>4. Antes de passar para o vendedor</h3>
+          <label class="campo-f">O que a Orbia deve descobrir do cliente<textarea name="qualificar" placeholder="Ex.: modelo e ano do carro, peça que precisa, cidade"></textarea></label>
+          <label class="campo-f">Quando passar a conversa para o vendedor<textarea name="quando_passar" placeholder="Ex.: quando o cliente quiser fechar, pedir orçamento ou perguntar algo que a Orbia não sabe"></textarea></label>
+          <label class="campo-f">Nome de quem continua o atendimento<input name="vendedor" placeholder="Ex.: Paulo"></label>
+        </div>
+        <div class="card"><h3>5. O que a Orbia nunca pode fazer</h3>
+          <label class="campo-f">Promessas e assuntos proibidos<textarea name="limites" placeholder="Ex.: não dar desconto, não prometer prazo de entrega, não confirmar estoque"></textarea></label>
+        </div>
+        <div class="card"><h3>6. Jeito de falar</h3>
+          <label class="campo-f">Nome da atendente<input name="atendente" placeholder="Orbia"></label>
+          <label class="campo-f">Tom<select name="tom"><option value="descontraido">Descontraído e simpático</option><option value="formal">Mais formal</option></select></label>
+          <label class="campo-f">Emojis<select name="emoji"><option value="poucos">Poucos</option><option value="nenhum">Nenhum</option><option value="a_vontade">À vontade</option></select></label>
+        </div>
+        <div class="linha" style="position:sticky;bottom:12px">
+          <button class="btn btn-lima" type="submit">Salvar instruções</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<div id="toast" class="toast hide"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+<script>
+const SUPABASE_URL = "https://kpdurajnbnpdnjofwefn.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwZHVyYWpuYm5wZG5qb2Z3ZWZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDI4ODMsImV4cCI6MjEwNzIxODg4M30.GtbauzZ396VBxTrbHTVsc3nprx4mMFjRySI_KxoGTZI";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const quando = (d) => d ? new Date(d).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
+function toast(t, ms = 4000) { const e = $("#toast"); e.textContent = t; e.classList.remove("hide"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.add("hide"), ms); }
+const MOTIVOS = { lead_quente: "Lead quente, passou para o humano", especialista_respondeu: "O humano respondeu pelo celular", contato_antigo: "Contato de antes da Orbia", limite_mensal: "Limite do mês atingido" };
+const estado = { cliente: null, papel: null, clientes: [], st: null };
+
+// ---------- Login ----------
+$("#form-login").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const av = $("#login-aviso"); av.classList.add("hide");
+  const { data, error } = await sb.auth.signInWithPassword({ email: $("#email").value.trim(), password: $("#senha").value });
+  if (error) { av.textContent = /invalid login/i.test(error.message) ? "E-mail ou senha incorretos." : "Não foi possível entrar: " + error.message; av.className = "aviso erro"; return; }
+  if (data?.session) iniciar();
+});
+$("#btn-sair").addEventListener("click", async () => { await sb.auth.signOut(); location.reload(); });
+
+async function iniciar() {
+  $("#tela-login").classList.add("hide"); $("#tela-app").classList.remove("hide");
+  const [{ data: papel }, { data: clientes }] = await Promise.all([
+    sb.rpc("meu_papel"),
+    sb.from("clientes").select("id, nome, agente_ativo, orbia_limite_mes, orbia_modelo, wa_conectado").order("nome"),
+  ]);
+  estado.papel = papel; estado.clientes = clientes || [];
+  document.querySelectorAll(".agencia").forEach((el) => el.classList.toggle("hide", papel !== "agencia"));
+  const salvo = (() => { try { return localStorage.getItem("orbia_cliente"); } catch (_) { return null; } })();
+  $("#sel-cliente").innerHTML = estado.clientes.map((c) => `<option value="${c.id}">${esc(c.nome)}${c.agente_ativo ? " · Orbia ligada" : ""}</option>`).join("");
+  estado.cliente = estado.clientes.find((c) => c.id === salvo)?.id || estado.clientes[0]?.id || null;
+  if (estado.cliente) $("#sel-cliente").value = estado.cliente;
+  await concluirOAuth();
+  carregar();
+}
+$("#sel-cliente").addEventListener("change", (e) => { estado.cliente = e.target.value; try { localStorage.setItem("orbia_cliente", estado.cliente); } catch (_) {} carregar(); });
+const atual = () => estado.clientes.find((c) => c.id === estado.cliente);
+
+// ---------- Visão geral ----------
+async function carregar() {
+  const c = atual(); if (!c) return;
+  $("#v-status").textContent = c.agente_ativo ? "Ligada" : "Desligada";
+  $("#btn-ativa").textContent = c.agente_ativo ? "Desligar Orbia" : "Ligar Orbia";
+  $("#btn-ativa").disabled = !c.wa_conectado && !c.agente_ativo;
+  carregarInstrucoes();
+  $("#btn-ativa").title = c.wa_conectado ? "" : "Conecte o WhatsApp no Orbe Tracking primeiro";
+  const { data: st, error } = await sb.functions.invoke("orbia-ia", { body: { acao: "status", cliente: c.id } });
+  if (error || !st?.ok) { toast(st?.erro || "Não foi possível ler o consumo agora."); return; }
+  estado.st = st;
+  $("#v-conv").textContent = st.conversas_mes; $("#v-lim").textContent = st.limite_mes; $("#in-lim").value = st.limite_mes;
+  $("#v-barra").style.width = Math.min(100, Math.round(100 * st.conversas_mes / Math.max(1, st.limite_mes))) + "%";
+  const u = st.uso;
+  $("#v-gasto").textContent = u && u.mes != null ? "US$ " + Number(u.mes).toFixed(2) : "—";
+  $("#v-conta").textContent = !st.chave ? "Sem conta de IA: a Orbia usa só a reserva gratuita (Gemini)." :
+    st.chave.origem === "cliente" ? "Conta do próprio cliente no OpenRouter." + (u?.erro ? " " + u.erro : "") :
+    `Conta da Orbe, teto de US$ ${Number(st.chave.limite_usd ?? 0).toFixed(2)} por mês.`;
+  $("#caixa-teto").classList.toggle("hide", estado.papel !== "agencia" || st.chave?.origem !== "orbe");
+  $("#in-teto").value = st.chave?.limite_usd ?? "";
+  $("#v-chave").textContent = !st.chave ? "Nenhuma conta conectada." :
+    (st.chave.origem === "cliente" ? "Conectada: conta do cliente" : "Conectada: conta da Orbe") + " desde " + quando(st.chave.desde) + ".";
+  $("#btn-remover").classList.toggle("hide", estado.papel !== "agencia" || !st.chave);
+}
+async function acao(rpc, args, ok) {
+  const { error } = await sb.rpc(rpc, args);
+  if (error) return toast(error.message, 6000);
+  toast(ok); const { data } = await sb.from("clientes").select("id, nome, agente_ativo, orbia_limite_mes, orbia_modelo, wa_conectado").eq("id", estado.cliente).single();
+  if (data) Object.assign(atual(), data); carregar();
+}
+$("#btn-ativa").addEventListener("click", () => acao("definir_orbia_ativa", { p_cliente: estado.cliente, p_ativa: !atual().agente_ativo }, "Pronto"));
+$("#btn-lim").addEventListener("click", () => acao("definir_orbia_limite", { p_cliente: estado.cliente, p_limite: Number($("#in-lim").value) }, "Limite salvo"));
+async function ia(body, ok) {
+  const { data, error } = await sb.functions.invoke("orbia-ia", { body: { cliente: estado.cliente, ...body } });
+  if (error || !data?.ok) return toast(data?.erro || "Não foi possível concluir.", 7000);
+  toast(ok); carregar();
+}
+$("#btn-teto").addEventListener("click", () => ia({ acao: "limite_usd", limite_usd: Number($("#in-teto").value) }, "Teto salvo"));
+$("#btn-chave-orbe").addEventListener("click", () => {
+  const v = prompt("Teto de gasto mensal em dólar para este cliente (ex.: 10):", "10");
+  if (v) ia({ acao: "criar_chave", limite_usd: Number(v.replace(",", ".")) }, "Conta da Orbe ligada");
+});
+$("#btn-remover").addEventListener("click", () => { if (confirm("Remover a conta de IA deste cliente? A Orbia passa a usar só a reserva gratuita.")) ia({ acao: "remover" }, "Conta removida"); });
+
+// ---------- Conectar a conta do cliente no OpenRouter (PKCE) ----------
+const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+$("#btn-oauth").addEventListener("click", async () => {
+  const verifier = b64url(crypto.getRandomValues(new Uint8Array(32)));
+  const challenge = b64url(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier)));
+  sessionStorage.setItem("orbia_pkce", JSON.stringify({ verifier, cliente: estado.cliente }));
+  const volta = location.origin + location.pathname;
+  location.href = `https://openrouter.ai/auth?callback_url=${encodeURIComponent(volta)}&code_challenge=${challenge}&code_challenge_method=S256`;
+});
+async function concluirOAuth() {
+  const code = new URLSearchParams(location.search).get("code");
+  let p = null; try { p = JSON.parse(sessionStorage.getItem("orbia_pkce") || "null"); } catch (_) {}
+  if (!code || !p) return;
+  sessionStorage.removeItem("orbia_pkce"); history.replaceState(null, "", location.pathname);
+  estado.cliente = p.cliente; $("#sel-cliente").value = p.cliente;
+  const { data, error } = await sb.functions.invoke("orbia-ia", { body: { acao: "oauth_troca", cliente: p.cliente, code, verifier: p.verifier } });
+  toast(error || !data?.ok ? (data?.erro || "Não foi possível conectar a conta.") : "Conta do cliente conectada", 6000);
+}
+
+// ---------- Abas e instruções ----------
+document.querySelectorAll(".aba").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll(".aba").forEach((x) => x.classList.toggle("ativa", x === b));
+  $("#aba-visao").classList.toggle("hide", b.dataset.aba !== "visao");
+  $("#aba-instrucoes").classList.toggle("hide", b.dataset.aba !== "instrucoes");
+}));
+async function carregarInstrucoes() {
+  const f = $("#form-inst"); f.reset();
+  const { data } = await sb.from("orbia_instrucoes").select("dados, atualizado_em, aprovado_em").eq("cliente_id", estado.cliente).maybeSingle();
+  for (const [k, v] of Object.entries(data?.dados || {})) if (f.elements[k]) f.elements[k].value = v;
+  $("#i-status").textContent = !data ? "Ainda não preenchido." :
+    "Última atualização em " + quando(data.atualizado_em) + ". A Orbia já está usando estas informações.";
+}
+$("#form-inst").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const dados = Object.fromEntries(new FormData(e.target).entries());
+  const { error } = await sb.rpc("salvar_orbia_instrucoes", { p_cliente: estado.cliente, p_dados: dados });
+  if (error) return toast(error.message, 6000);
+  toast("Instruções salvas"); carregarInstrucoes();
+});
+  if (error) return toast(error.message, 6000);
+  toast("Instruções aprovadas"); carregarInstrucoes();
+});
+sb.auth.getSession().then(({ data }) => data?.session ? iniciar() : $("#tela-login").classList.remove("hide"));
+</script>
+</body>
+</html>
