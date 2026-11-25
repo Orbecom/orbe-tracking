@@ -633,13 +633,14 @@ const EN = {
   "Tudo conectado 🎉": "All connected 🎉", "Login cancelado.": "Login canceled.", "Verificação concluída": "Check complete",
   "Nenhuma Página encontrada nesse perfil.": "No Pages found on this profile.",
   "Conectar com a Meta": "Connect with Meta", "Lendo sua conta da Meta…": "Reading your Meta account…",
-  "Entre com o Facebook e escolha a empresa, a Página, a conta de anúncios e o pixel. Eu dou o acesso de parceiro à Orbe em cada um, sem você abrir o Gerenciador de Negócios.": "Log in with Facebook and choose your business, Page, ad account and pixel. The app grants the agency partner access to each one, without opening Business Manager.",
+  "Entre com o Facebook e escolha a sua empresa e a Página. Eu salvo o portfólio e dou o acesso de parceiro à Orbe na Página, sem você abrir o Gerenciador de Negócios.": "Log in with Facebook and choose your business and Page. The app saves your portfolio and grants the agency partner access to the Page, without opening Business Manager.",
+  "A conta de anúncios e o pixel você libera nos próximos passos, em poucos cliques. A Meta não deixa o app fazer isso pelo login.": "You share the ad account and pixel in the next steps, in a few clicks. Meta doesn't allow the app to do it through login.",
   "Empresa (portfólio)": "Business (portfolio)", "Escolha a empresa…": "Choose the business…", "Escolha a Página…": "Choose the Page…",
   "Conta de anúncios": "Ad account", "Pixel (opcional)": "Pixel (optional)", "Nenhuma": "None", "Nenhum": "None",
   "Nenhuma conta encontrada": "No ad account found", "Nenhum pixel encontrado": "No pixel found",
   "Buscando contas de anúncios e pixels…": "Loading ad accounts and pixels…", "Conectar tudo": "Connect all", "Conectando…": "Connecting…",
   "Portfólio salvo": "Portfolio saved", "Orbe Media adicionada como parceira da Página": "Orbe Media added as a partner of the Page",
-  "Pixel compartilhado com a Orbe Media": "Pixel shared with Orbe Media", "Refazer conexão": "Connect again",
+  "Pixel compartilhado com a Orbe Media": "Pixel shared with Orbe Media", "Orbe Media já era parceira da Página": "Orbe Media was already a partner of the Page", "Refazer conexão": "Connect again",
   "O que deu ✗ pode ser feito pelos passos seguintes, do jeito manual.": "Anything marked ✗ can be done manually in the next steps.",
   "Prefere fazer manualmente? Clique em": "Prefer to do it manually? Click", "Pular": "Skip", "e siga os próximos passos.": "and follow the next steps.",
   "Isso dá à Orbe acesso só ao que você escolher, sem precisar da sua senha.": "This gives Orbe access only to what you choose, without needing your password.",
@@ -1064,7 +1065,7 @@ function htmlMeta() {
     const itens = [];
     if (r.bm) itens.push(st(r.bm.ok, r.bm.ok ? "Portfólio salvo" : "Portfólio: " + esc(r.bm.erro)));
     if (r.pagina) itens.push(st(r.pagina.ok && r.webhook?.ok, r.pagina.ok ? `Página ${esc(r.pagina.nome || "")} conectada (webhook: ${esc((r.webhook?.campos || []).join(", ") || "—")})` : esc(r.pagina.erro)));
-    if (r.parceiro) itens.push(st(r.parceiro.ok, r.parceiro.ok ? "Orbe Media adicionada como parceira da Página" : "Parceria da Página: " + esc(r.parceiro.erro || "")));
+    if (r.parceiro) itens.push(st(r.parceiro.ok, r.parceiro.ok ? (r.parceiro.ja ? "Orbe Media já era parceira da Página" : "Orbe Media adicionada como parceira da Página") : "Parceria da Página: " + esc(r.parceiro.erro || "")));
     (r.contas || []).forEach((c) => itens.push(st(c.ok, c.ok ? `Conta de anúncios ${esc(c.id)} liberada para a Orbe Media` : `Conta ${esc(c.id)}: ${esc(c.erro || "")}`)));
     if (r.pixel) itens.push(st(r.pixel.ok, r.pixel.ok ? "Pixel compartilhado com a Orbe Media" : "Pixel: " + esc(r.pixel.erro || "")));
     const falhou = Object.values(r).flat().some((x) => x && x.ok === false);
@@ -1075,7 +1076,9 @@ function htmlMeta() {
   let h = `<label class="cx-lbl">Empresa (portfólio)<select class="campo" id="cx-meta-bm">${opt(m.empresas, m.bm, "Escolha a empresa…")}</select></label>`;
   h += `<label class="cx-lbl">Página do Facebook<select class="campo" id="cx-meta-page">${opt(m.paginas, m.page, "Escolha a Página…")}</select></label>`;
   if (m.carregandoAtivos) h += `<p class="nota">Buscando contas de anúncios e pixels…</p>`;
-  else if (m.ativos) {
+  else if (m.ativos?.sem_permissao_ads) {
+    h += `<p class="nota">A conta de anúncios e o pixel você libera nos próximos passos, em poucos cliques. A Meta não deixa o app fazer isso pelo login.</p>`;
+  } else if (m.ativos) {
     h += `<label class="cx-lbl">Conta de anúncios<select class="campo" id="cx-meta-conta">${opt(m.ativos.contas, m.conta, m.ativos.contas.length ? "Nenhuma" : "Nenhuma conta encontrada")}</select></label>`;
     h += `<label class="cx-lbl">Pixel (opcional)<select class="campo" id="cx-meta-pixel">${opt(m.ativos.pixels, m.pixel, m.ativos.pixels.length ? "Nenhum" : "Nenhum pixel encontrado")}</select></label>`;
   }
@@ -1107,7 +1110,7 @@ function passosConexoes() {
   if (metaVisivel()) {
     const metaOk = !!(bm && o.parceria?.ok !== false && (o.paginas || []).length && (o.contas || []).length) || !!estado.meta?.resultado;
     L.push({ k: "meta", feito: metaOk, titulo: "Conectar com a Meta",
-      texto: "Entre com o Facebook e escolha a empresa, a Página, a conta de anúncios e o pixel. Eu dou o acesso de parceiro à Orbe em cada um, sem você abrir o Gerenciador de Negócios.",
+      texto: "Entre com o Facebook e escolha a sua empresa e a Página. Eu salvo o portfólio e dou o acesso de parceiro à Orbe na Página, sem você abrir o Gerenciador de Negócios.",
       corpo: `<div id="cx-meta">${htmlMeta()}</div><p class="nota">Prefere fazer manualmente? Clique em <b>Pular</b> e siga os próximos passos.</p>`, opcional: true });
   }
   L.push({ k: "bm", feito: !!bm, titulo: "Seu portfólio empresarial",
