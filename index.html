@@ -645,6 +645,7 @@ const EN = {
   "Entre com o Facebook e escolha a sua empresa e a Página. Eu dou o acesso de parceiro à Orbe e confiro a conta de anúncios, sem você precisar copiar IDs.": "Log in with Facebook and choose your business and Page. The app grants the agency partner access and checks your ad account, without copying IDs.",
   "Por último, ligue o WhatsApp Business ao painel. Leva uns 5 minutos, com o celular da empresa em mãos.": "Finally, connect WhatsApp Business to the dashboard. It takes about 5 minutes, with the business phone at hand.",
   "Falta só liberar a conta de anúncios": "Just share your ad account",
+  "Use a conta que já roda seus anúncios ou crie uma nova pelo botão": "Use the account that already runs your ads or create a new one with the", "da mesma página. Leva menos de um minuto:": "button on the same page. It takes less than a minute:", "Adicionar": "Add",
   "Escolha a empresa para ver as Páginas dela.": "Choose the business to see its Pages.",
   "Essa empresa não tem nenhuma Página que você administre. Escolha outra empresa ou confira na Meta.": "This business has no Page you manage. Choose another business or check on Meta.", "Prefere fazer tudo manualmente?": "Prefer to do everything manually?", "Orbe Media já era parceira da Página": "Orbe Media was already a partner of the Page", "Refazer conexão": "Connect again",
   "O que deu ✗ pode ser feito pelos passos seguintes, do jeito manual.": "Anything marked ✗ can be done manually in the next steps.",
@@ -1124,7 +1125,7 @@ function passosConexoes() {
     const temConta = (o.contas || []).length > 0;
     const depoisLogin = (temPagina || estado.meta?.resultado) && !temConta && !propria
       ? `<div class="cx-sub"><b>Falta só liberar a conta de anúncios</b>
-          <p>A Meta não deixa o app fazer esta parte pelo login. Leva menos de um minuto:</p>
+          <p>Use a conta que já roda seus anúncios ou crie uma nova pelo botão <b>Adicionar</b> da mesma página. Leva menos de um minuto:</p>
           ${compartilhar("ad_accounts", "Contas de anúncios", "na conta que vai rodar os anúncios")}
           <p class="nota">Eu confiro sozinho e marco quando der certo. Pixel também pode ser liberado do mesmo jeito em <a href="${linkBM("events_dataset_and_pixel", bm)}" target="_blank" rel="noopener">Conjuntos de dados</a> (opcional).</p></div>`
       : "";
