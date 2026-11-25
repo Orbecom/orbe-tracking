@@ -277,9 +277,6 @@ $("#form-inst").addEventListener("submit", async (e) => {
   if (error) return toast(error.message, 6000);
   toast("Instruções salvas"); carregarInstrucoes();
 });
-  if (error) return toast(error.message, 6000);
-  toast("Instruções aprovadas"); carregarInstrucoes();
-});
 sb.auth.getSession().then(({ data }) => data?.session ? iniciar() : $("#tela-login").classList.remove("hide"));
 </script>
 </body>
