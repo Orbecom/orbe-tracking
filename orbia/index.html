@@ -5,54 +5,54 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Orbia · Painel</title>
 <meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cpath d=%22M50 6a44 44 0 1 1-21.5 82.4L9 94l5.4-18.2A44 44 0 0 1 50 6z%22 fill=%22%237a33fe%22/%3E%3Cpath d=%22M50 24c2.2 17.5 8.5 23.8 26 26-17.5 2.2-23.8 8.5-26 26-2.2-17.5-8.5-23.8-26-26 17.5-2.2 23.8-8.5 26-26z%22 fill=%22%23c5fc37%22/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Archivo+Black&display=swap" rel="stylesheet">
 <style>
-:root{--preto:#0B0712;--roxo-esc:#2F1C47;--roxo:#7A33FE;--lima:#C5FC37;--txt:#F6F2FF;--txt2:#9C93B0;--card:#160E22;--borda:#2a1d3d;--ok:#5fd38d;--erro:#ff7676}
+@font-face{font-family:"Etna";src:url("Etna.ttf") format("truetype");font-display:swap}
+:root{--fundo:#F2F1EE;--card:#FFFFFF;--borda:rgba(47,28,71,.14);--txt:#2F1C47;--txt2:#665876;--roxo:#7A33FE;--lima:#C5FC37;--escuro:#2F1C47;--erro:#B4232C}
 *{box-sizing:border-box}
-body{margin:0;font-family:"Open Sans",system-ui,sans-serif;background:var(--preto);color:var(--txt);min-height:100vh}
-h1,h2,.marca{font-family:"Archivo Black",sans-serif;letter-spacing:.2px}
-a{color:var(--lima)}
+body{margin:0;font-family:"Open Sans",system-ui,sans-serif;background:var(--fundo);color:var(--txt);min-height:100vh;font-size:15px;line-height:1.5}
+a{color:var(--roxo)}
 .hide{display:none!important}
-.wrap{max-width:1100px;margin:0 auto;padding:20px}
-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:16px 20px;border-bottom:1px solid var(--borda);position:sticky;top:0;background:rgba(11,7,18,.92);backdrop-filter:blur(8px);z-index:5}
-.marca{font-size:20px}.marca span{color:var(--roxo)}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 24px 60px}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 24px;border-bottom:1px solid var(--borda);position:sticky;top:0;background:rgba(242,241,238,.92);backdrop-filter:blur(8px);z-index:5}
+.marca{display:inline-flex;align-items:center;gap:10px;font-family:"Etna","Archivo Black",sans-serif;font-size:30px;line-height:1;color:var(--txt);letter-spacing:-.01em}
+.marca svg{width:34px;height:34px}
 .esp{flex:1}
-select,input,textarea{background:var(--card);color:var(--txt);border:1px solid var(--borda);border-radius:10px;padding:10px 12px;font:inherit}
-textarea{width:100%;min-height:90px}
-.btn{border:0;border-radius:999px;padding:10px 18px;font-weight:700;cursor:pointer;font:inherit;font-weight:700}
-.btn-lima{background:var(--lima);color:#111}.btn-roxo{background:var(--roxo);color:#fff}.btn-f{background:transparent;color:var(--txt);border:1px solid var(--borda)}
-.btn:disabled{opacity:.5;cursor:default}
-.grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:18px 0}
-.card{background:var(--card);border:1px solid var(--borda);border-radius:18px;padding:18px}
-.card h3{margin:0 0 6px;font-size:13px;color:var(--txt2);font-weight:600;text-transform:uppercase;letter-spacing:.8px}
-.num{font-size:30px;font-weight:700}
-.barra{height:8px;background:var(--borda);border-radius:99px;overflow:hidden;margin-top:10px}.barra i{display:block;height:100%;background:var(--lima)}
+select,input,textarea{background:#fff;color:var(--txt);border:1px solid var(--borda);border-radius:12px;padding:11px 13px;font:inherit}
+select:focus,input:focus,textarea:focus{outline:2px solid var(--roxo);outline-offset:1px;border-color:transparent}
+textarea{width:100%;min-height:96px;resize:vertical}
+::placeholder{color:#9a90a8}
+.btn{border:0;border-radius:999px;padding:11px 20px;cursor:pointer;font:inherit;font-weight:700}
+.btn-lima{background:var(--lima);color:var(--escuro)}.btn-roxo{background:var(--roxo);color:#fff}.btn-f{background:transparent;color:var(--txt);border:1px solid var(--borda)}
+.btn:hover{filter:brightness(.96)}.btn:disabled{opacity:.45;cursor:default}
+h1.titulo{font-family:"Etna","Archivo Black",sans-serif;font-weight:400;font-size:44px;line-height:1.05;margin:8px 0 4px}
+.grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin:22px 0}
+.card{background:var(--card);border:1px solid var(--borda);border-radius:20px;padding:22px}
+.card.escuro{background:var(--escuro);border-color:var(--escuro);color:#F6F2FF}.card.escuro h3{color:#C9BEDD}.card.escuro .nota{color:#C9BEDD}
+.card h3{margin:0 0 8px;font-size:12px;color:var(--txt2);font-weight:600;text-transform:uppercase;letter-spacing:.12em}
+.num{font-family:"Etna","Archivo Black",sans-serif;font-weight:400;font-size:40px;line-height:1.1}
+.barra{height:8px;background:rgba(47,28,71,.08);border-radius:99px;overflow:hidden;margin-top:12px}.barra i{display:block;height:100%;background:var(--roxo)}
 .nota{color:var(--txt2);font-size:13px}
-.linha{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
-.pilula{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700}
-.p-bot{background:#2b1b4a;color:#c9a8ff}.p-hum{background:#3a3214;color:#ffd76a}.p-ok{background:#16351f;color:var(--ok)}.p-off{background:#3a1717;color:var(--erro)}
+.linha{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
 .lista{display:flex;flex-direction:column;gap:8px}
-.conv{display:flex;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--borda);border-radius:14px;cursor:pointer;background:var(--card)}
-.conv:hover{border-color:var(--roxo)}
-.conv b{flex:1}
-.chat{display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow:auto;padding:4px}
-.msg{max-width:80%;padding:10px 12px;border-radius:14px;white-space:pre-wrap;font-size:14px}
-.msg.cliente{align-self:flex-start;background:#221735}.msg.orbia{align-self:flex-end;background:var(--roxo-esc);border:1px solid var(--roxo)}
-.login{max-width:380px;margin:12vh auto;padding:28px}
+.login{max-width:400px;margin:12vh auto;padding:32px}
+.login .marca{font-size:40px;margin-bottom:6px}.login .marca svg{width:44px;height:44px}
 .login input{width:100%;margin:6px 0 12px}
-.aviso{padding:10px 12px;border-radius:10px;background:#2a1d3d;font-size:14px;margin:10px 0}.aviso.erro{background:#3a1717}
-.abas{display:flex;gap:6px;margin-top:6px}.aba{background:transparent;border:0;color:var(--txt2);font:inherit;font-weight:700;padding:8px 12px;border-radius:10px;cursor:pointer}.aba.ativa{background:var(--card);color:var(--txt)}
-.campo-f{display:flex;flex-direction:column;gap:6px;font-size:14px;margin:10px 0}.campo-f input,.campo-f select{width:100%}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--roxo);color:#fff;padding:12px 18px;border-radius:12px;z-index:9}
-.fundo{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px;z-index:8}
-.modal{background:var(--preto);border:1px solid var(--borda);border-radius:18px;padding:18px;width:min(640px,100%);max-height:90vh;overflow:auto}
+.aviso{padding:10px 12px;border-radius:12px;background:#ece8f3;font-size:14px;margin:10px 0}.aviso.erro{background:#fbe4e5;color:var(--erro)}
+.abas{display:inline-flex;gap:4px;margin-top:18px;background:#fff;border:1px solid var(--borda);border-radius:999px;padding:4px}
+.aba{background:transparent;border:0;color:var(--txt2);font:inherit;font-weight:600;padding:8px 16px;border-radius:999px;cursor:pointer}.aba.ativa{background:var(--escuro);color:#fff}
+.campo-f{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:600;margin:12px 0}.campo-f input,.campo-f select,.campo-f textarea{width:100%;font-weight:400}
+.pilula{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:700;background:#ece8f3;color:var(--txt2)}
+.pilula.on{background:var(--lima);color:var(--escuro)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--escuro);color:#fff;padding:12px 18px;border-radius:14px;z-index:9;box-shadow:0 8px 24px rgba(47,28,71,.25)}
 </style>
 </head>
 <body>
 <section id="tela-login" class="hide">
   <div class="card login">
-    <div class="marca">orb<span>ia</span></div>
+    <div class="marca"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 6a44 44 0 1 1-21.5 82.4L9 94l5.4-18.2A44 44 0 0 1 50 6z" fill="#7a33fe"/><path d="M50 24c2.2 17.5 8.5 23.8 26 26-17.5 2.2-23.8 8.5-26 26-2.2-17.5-8.5-23.8-26-26 17.5-2.2 23.8-8.5 26-26z" fill="#c5fc37"/></svg>orbia</div>
     <p class="nota">Painel da atendente virtual. Use o mesmo e-mail e senha do Orbe Tracking.</p>
     <form id="form-login">
       <input id="email" type="email" placeholder="E-mail" autocomplete="email" required>
@@ -65,13 +65,15 @@ textarea{width:100%;min-height:90px}
 
 <section id="tela-app" class="hide">
   <header>
-    <div class="marca">orb<span>ia</span></div>
+    <div class="marca"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 6a44 44 0 1 1-21.5 82.4L9 94l5.4-18.2A44 44 0 0 1 50 6z" fill="#7a33fe"/><path d="M50 24c2.2 17.5 8.5 23.8 26 26-17.5 2.2-23.8 8.5-26 26-2.2-17.5-8.5-23.8-26-26 17.5-2.2 23.8-8.5 26-26z" fill="#c5fc37"/></svg>orbia</div>
     <select id="sel-cliente" aria-label="Cliente"></select>
     <span class="esp"></span>
     <a class="nota" href="/" target="_blank" rel="noopener">Abrir Orbe Tracking</a>
     <button class="btn btn-f" id="btn-sair">Sair</button>
   </header>
   <div class="wrap">
+    <h1 class="titulo">Sua atendente no WhatsApp</h1>
+    <p class="nota" style="margin:0">Acompanhe o consumo e conte para a Orbia como a sua empresa atende.</p>
     <nav class="abas">
       <button class="aba ativa" data-aba="visao">Visão geral</button>
       <button class="aba" data-aba="instrucoes">Instruções da Orbia</button>
@@ -79,7 +81,7 @@ textarea{width:100%;min-height:90px}
 
     <div id="aba-visao">
       <div class="grade">
-        <div class="card">
+        <div class="card escuro">
           <h3>Orbia</h3>
           <div class="num" id="v-status">—</div>
           <div class="linha"><button class="btn btn-roxo" id="btn-ativa">—</button></div>
@@ -103,7 +105,7 @@ textarea{width:100%;min-height:90px}
         <h3>Conta de IA (OpenRouter)</h3>
         <p id="v-chave" class="nota">—</p>
         <div class="linha">
-          <button class="btn btn-lima" id="btn-oauth">Conectar OpenRouter</button>
+          <button class="btn btn-roxo" id="btn-oauth">Conectar OpenRouter</button>
           <button class="btn btn-f agencia" id="btn-remover">Remover conta</button>
         </div>
         <p class="nota">O gasto de IA vai direto para o cartão cadastrado no OpenRouter.</p>
@@ -198,6 +200,8 @@ async function carregar() {
   const c = atual(); if (!c) return;
   $("#v-status").textContent = c.agente_ativo ? "Ligada" : "Desligada";
   $("#btn-ativa").textContent = c.agente_ativo ? "Desligar Orbia" : "Ligar Orbia";
+  $("#btn-ativa").className = "btn " + (c.agente_ativo ? "btn-f" : "btn-lima");
+  $("#btn-ativa").style.color = c.agente_ativo ? "#F6F2FF" : ""; $("#btn-ativa").style.borderColor = c.agente_ativo ? "rgba(246,242,255,.35)" : "";
   $("#btn-ativa").disabled = !c.wa_conectado && !c.agente_ativo;
   carregarInstrucoes();
   $("#btn-ativa").title = c.wa_conectado ? "" : "Conecte o WhatsApp no Orbe Tracking primeiro";
