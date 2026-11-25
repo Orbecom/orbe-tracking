@@ -645,6 +645,9 @@ const EN = {
   "Entre com o Facebook e escolha a sua empresa e a Página. Eu dou o acesso de parceiro à Orbe e confiro a conta de anúncios, sem você precisar copiar IDs.": "Log in with Facebook and choose your business and Page. The app grants the agency partner access and checks your ad account, without copying IDs.",
   "Por último, ligue o WhatsApp Business ao painel. Leva uns 5 minutos, com o celular da empresa em mãos.": "Finally, connect WhatsApp Business to the dashboard. It takes about 5 minutes, with the business phone at hand.",
   "Falta só liberar a conta de anúncios": "Just share your ad account",
+  "Entre com o Facebook e escolha a sua empresa e a Página. Eu dou o acesso de parceiro à Orbe, sem você precisar copiar IDs.": "Log in with Facebook and choose your business and Page. The app grants the agency partner access, without copying IDs.",
+  "Libere para a Orbe a conta que vai rodar os anúncios. Pode ser a que você já usa ou uma nova, criada pelo botão": "Share with Orbe the ad account that will run the ads. It can be the one you already use or a new one, created with the",
+  "da mesma página.": "button on the same page.", "Abrir Contas de anúncios": "Open Ad accounts",
   "Use a conta que já roda seus anúncios ou crie uma nova pelo botão": "Use the account that already runs your ads or create a new one with the", "da mesma página. Leva menos de um minuto:": "button on the same page. It takes less than a minute:", "Adicionar": "Add",
   "Escolha a empresa para ver as Páginas dela.": "Choose the business to see its Pages.",
   "Essa empresa não tem nenhuma Página que você administre. Escolha outra empresa ou confira na Meta.": "This business has no Page you manage. Choose another business or check on Meta.", "Prefere fazer tudo manualmente?": "Prefer to do everything manually?", "Orbe Media já era parceira da Página": "Orbe Media was already a partner of the Page", "Refazer conexão": "Connect again",
@@ -1123,16 +1126,14 @@ function passosConexoes() {
   if (metaVisivel() && !estado.cxManual) {
     const temPagina = !!(bm && (o.paginas || []).length);
     const temConta = (o.contas || []).length > 0;
-    const depoisLogin = (temPagina || estado.meta?.resultado) && !temConta && !propria
-      ? `<div class="cx-sub"><b>Falta só liberar a conta de anúncios</b>
-          <p>Use a conta que já roda seus anúncios ou crie uma nova pelo botão <b>Adicionar</b> da mesma página. Leva menos de um minuto:</p>
-          ${compartilhar("ad_accounts", "Contas de anúncios", "na conta que vai rodar os anúncios")}
-          <p class="nota">Eu confiro sozinho e marco quando der certo. Pixel também pode ser liberado do mesmo jeito em <a href="${linkBM("events_dataset_and_pixel", bm)}" target="_blank" rel="noopener">Conjuntos de dados</a> (opcional).</p></div>`
-      : "";
-    L.push({ k: "meta", feito: temPagina && temConta, titulo: "Conectar com a Meta",
-      texto: "Entre com o Facebook e escolha a sua empresa e a Página. Eu dou o acesso de parceiro à Orbe e confiro a conta de anúncios, sem você precisar copiar IDs.",
-      achados: [...(o.paginas || []).map((p) => p.nome), ...(o.contas || []).map((x) => x.nome)],
-      corpo: `<div id="cx-meta">${htmlMeta()}</div>${depoisLogin}<p class="nota"><a href="#" id="cx-manual">Prefere fazer tudo manualmente?</a></p>` });
+    L.push({ k: "meta", feito: temPagina, titulo: "Conectar com a Meta",
+      texto: "Entre com o Facebook e escolha a sua empresa e a Página. Eu dou o acesso de parceiro à Orbe, sem você precisar copiar IDs.",
+      achados: (o.paginas || []).map((p) => p.nome),
+      corpo: `<div id="cx-meta">${htmlMeta()}</div><p class="nota"><a href="#" id="cx-manual">Prefere fazer tudo manualmente?</a></p>` });
+    if (!propria) L.push({ k: "conta", feito: temConta, titulo: "Conta de anúncios",
+      texto: "Libere para a Orbe a conta que vai rodar os anúncios. Pode ser a que você já usa ou uma nova, criada pelo botão <b>Adicionar</b> da mesma página.",
+      achados: (o.contas || []).map((x) => x.nome + (x.ativa ? "" : " (desativada)")),
+      corpo: compartilhar("ad_accounts", "Contas de anúncios", "na conta (ou crie uma em Adicionar)") });
     L.push({ k: "wa", feito: !!c.wa_conectado, titulo: "WhatsApp",
       texto: "Por último, ligue o WhatsApp Business ao painel. Leva uns 5 minutos, com o celular da empresa em mãos.",
       corpo: `<div class="acoes-cx"><button type="button" class="btn btn-lima btn-p" id="cx-btn-wa">Conectar WhatsApp</button></div>` });
