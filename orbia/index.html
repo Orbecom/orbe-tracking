@@ -104,10 +104,9 @@ textarea{width:100%;min-height:90px}
         <p id="v-chave" class="nota">—</p>
         <div class="linha">
           <button class="btn btn-lima" id="btn-oauth">Conectar OpenRouter</button>
-          <button class="btn btn-roxo agencia" id="btn-chave-orbe">Usar conta da Orbe (com teto)</button>
           <button class="btn btn-f agencia" id="btn-remover">Remover conta</button>
         </div>
-        <p class="nota">Conta do cliente: o gasto vai para o cartão dele no OpenRouter. Conta da Orbe: sai do saldo da agência, limitado pelo teto mensal.</p>
+        <p class="nota">O gasto de IA vai direto para o cartão cadastrado no OpenRouter.</p>
       </div>
     </div>
 
@@ -232,10 +231,7 @@ async function ia(body, ok) {
   toast(ok); carregar();
 }
 $("#btn-teto").addEventListener("click", () => ia({ acao: "limite_usd", limite_usd: Number($("#in-teto").value) }, "Teto salvo"));
-$("#btn-chave-orbe").addEventListener("click", () => {
-  const v = prompt("Teto de gasto mensal em dólar para este cliente (ex.: 10):", "10");
-  if (v) ia({ acao: "criar_chave", limite_usd: Number(v.replace(",", ".")) }, "Conta da Orbe ligada");
-});
+
 $("#btn-remover").addEventListener("click", () => { if (confirm("Remover a conta de IA deste cliente? A Orbia passa a usar só a reserva gratuita.")) ia({ acao: "remover" }, "Conta removida"); });
 
 // ---------- Conectar a conta do cliente no OpenRouter (PKCE) ----------
